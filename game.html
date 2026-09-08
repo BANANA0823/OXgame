@@ -1,10 +1,21 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>4目落とし</title>
+
+
+<!-- Supabase -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
 <style>
 
@@ -44,9 +55,12 @@ body{
 
 body::before{
     content:"";
+
     position:fixed;
     inset:0;
+
     pointer-events:none;
+
     opacity:0.12;
 
     background-image:
@@ -61,11 +75,13 @@ body::before{
 .game-container{
     width:100%;
     max-width:760px;
+
     padding:18px;
 }
 
 h1{
     margin:0 0 5px;
+
     text-align:center;
 
     font-size:
@@ -80,12 +96,84 @@ h1{
 
 .description{
     text-align:center;
-    color:rgba(255,255,255,0.75);
-    margin-bottom:15px;
+
+    color:
+        rgba(255,255,255,0.75);
+
+    margin-bottom:10px;
 }
+
+
+/* =========================
+   ルーム表示
+========================= */
+
+.room-info{
+    text-align:center;
+
+    margin-bottom:12px;
+
+    color:
+        rgba(255,255,255,0.75);
+
+    font-size:14px;
+}
+
+#roomIdDisplay{
+    font-weight:bold;
+    color:#fff;
+}
+
+
+/* =========================
+   接続状態
+========================= */
+
+.connection-status{
+    text-align:center;
+
+    margin-bottom:12px;
+
+    font-size:14px;
+
+    color:
+        rgba(255,255,255,0.75);
+}
+
+#statusText{
+    font-weight:bold;
+}
+
+
+/* =========================
+   自分のプレイヤー表示
+========================= */
+
+.my-player{
+    text-align:center;
+
+    margin-bottom:12px;
+
+    padding:8px;
+
+    border:
+        1px solid
+        rgba(255,255,255,0.25);
+
+    border-radius:10px;
+
+    background:
+        rgba(0,0,0,0.12);
+}
+
+
+/* =========================
+   ターン
+========================= */
 
 .turn-box{
     padding:14px;
+
     margin-bottom:12px;
 
     border:
@@ -93,6 +181,7 @@ h1{
         rgba(255,255,255,0.35);
 
     border-radius:12px;
+
     text-align:center;
 
     background:
@@ -105,7 +194,9 @@ h1{
 
 .turn-label{
     font-size:14px;
-    color:rgba(255,255,255,0.65);
+
+    color:
+        rgba(255,255,255,0.65);
 }
 
 #turnDisplay{
@@ -123,10 +214,19 @@ h1{
         rgba(255,255,255,0.35);
 }
 
+
+/* =========================
+   プレイヤー
+========================= */
+
 .players{
     display:grid;
-    grid-template-columns:repeat(4,1fr);
+
+    grid-template-columns:
+        repeat(4,1fr);
+
     gap:8px;
+
     margin-bottom:15px;
 }
 
@@ -138,6 +238,7 @@ h1{
         rgba(255,255,255,0.25);
 
     border-radius:10px;
+
     text-align:center;
 
     background:
@@ -148,6 +249,7 @@ h1{
 
 .player-symbol{
     font-size:27px;
+
     font-weight:bold;
 
     color:#fff;
@@ -172,6 +274,11 @@ h1{
         0 0 22px
         rgba(255,255,255,0.4);
 }
+
+
+/* =========================
+   盤面
+========================= */
 
 .board-wrapper{
     position:relative;
@@ -203,7 +310,10 @@ h1{
     position:relative;
 
     display:grid;
-    grid-template-columns:repeat(8,1fr);
+
+    grid-template-columns:
+        repeat(8,1fr);
+
     gap:6px;
 }
 
@@ -211,6 +321,7 @@ h1{
     aspect-ratio:1 / 1;
 
     display:flex;
+
     justify-content:center;
     align-items:center;
 
@@ -221,6 +332,7 @@ h1{
     border-radius:5px;
 
     cursor:pointer;
+
     user-select:none;
 
     color:#fff;
@@ -272,7 +384,10 @@ h1{
     }
 }
 
-/* 勝利した4個 */
+
+/* =========================
+   勝利した4個
+========================= */
 
 .winning-cell{
     animation:
@@ -297,7 +412,10 @@ h1{
     }
 }
 
-/* チョーク線 */
+
+/* =========================
+   チョーク線
+========================= */
 
 .win-line{
     position:absolute;
@@ -319,11 +437,6 @@ h1{
         0 0 12px
         rgba(255,255,255,0.7);
 
-    /*
-       transformはJSの回転を使うので、
-       clip-pathだけで線を描く
-    */
-
     animation:
         chalkLine
         0.9s
@@ -335,6 +448,7 @@ h1{
     content:"";
 
     position:absolute;
+
     left:0;
     top:2px;
 
@@ -348,13 +462,20 @@ h1{
 @keyframes chalkLine{
 
     from{
-        clip-path:inset(0 100% 0 0);
+        clip-path:
+            inset(0 100% 0 0);
     }
 
     to{
-        clip-path:inset(0 0 0 0);
+        clip-path:
+            inset(0 0 0 0);
     }
 }
+
+
+/* =========================
+   説明
+========================= */
 
 .hint{
     text-align:center;
@@ -365,8 +486,14 @@ h1{
         rgba(255,255,255,0.75);
 }
 
+
+/* =========================
+   ボタン
+========================= */
+
 button{
     width:100%;
+
     height:50px;
 
     border:
@@ -381,9 +508,11 @@ button{
     color:#fff;
 
     font-size:17px;
+
     font-weight:bold;
 
     cursor:pointer;
+
     font-family:inherit;
 }
 
@@ -396,8 +525,14 @@ button:active{
     transform:scale(0.97);
 }
 
+
+/* =========================
+   結果
+========================= */
+
 #resultOverlay{
     position:fixed;
+
     inset:0;
 
     display:none;
@@ -415,6 +550,7 @@ button:active{
 
 .result-box{
     width:100%;
+
     max-width:430px;
 
     padding:35px 25px;
@@ -467,6 +603,11 @@ button:active{
         rgba(255,255,255,0.5);
 }
 
+
+/* =========================
+   スマホ
+========================= */
+
 @media(max-width:500px){
 
     .game-container{
@@ -492,105 +633,230 @@ button:active{
     .player-symbol{
         font-size:23px;
     }
+
 }
 
 </style>
+
 </head>
 
 
 <body>
 
+
 <div class="game-container">
 
-    <h1>🎮 4目落とし</h1>
 
-    <div class="description">
-        黒板で遊ぶ、4人用ゲーム
+<h1>🎮 4目落とし</h1>
+
+
+<div class="description">
+    黒板で遊ぶ、オンライン4人対戦
+</div>
+
+
+<div class="room-info">
+
+    ルーム：
+    <span id="roomIdDisplay">
+        ---
+    </span>
+
+</div>
+
+
+<div class="connection-status">
+
+    ●
+    <span id="statusText">
+        接続中...
+    </span>
+
+</div>
+
+
+<div class="my-player">
+
+    あなた：
+    <strong id="myPlayerDisplay">
+        接続中...
+    </strong>
+
+</div>
+
+
+<div class="turn-box">
+
+    <div class="turn-label">
+        現在のターン
     </div>
 
-
-    <div class="turn-box">
-
-        <div class="turn-label">
-            現在のターン
-        </div>
-
-        <div id="turnDisplay">
-            プレイヤー1「〇」の番
-        </div>
-
+    <div id="turnDisplay">
+        接続中...
     </div>
 
+</div>
 
-    <div class="players">
 
-        <div class="player" id="player0">
-            <div class="player-symbol">〇</div>
-            P1
+<div class="players">
+
+
+    <div
+        class="player"
+        id="player0"
+    >
+
+        <div class="player-symbol">
+            〇
         </div>
 
-        <div class="player" id="player1">
-            <div class="player-symbol">×</div>
-            P2
-        </div>
-
-        <div class="player" id="player2">
-            <div class="player-symbol">△</div>
-            P3
-        </div>
-
-        <div class="player" id="player3">
-            <div class="player-symbol">□</div>
-            P4
-        </div>
+        P1
 
     </div>
 
 
     <div
-        class="board-wrapper"
-        id="boardWrapper"
+        class="player"
+        id="player1"
     >
 
-        <div
-            id="board"
-            class="board"
-        ></div>
+        <div class="player-symbol">
+            ×
+        </div>
+
+        P2
 
     </div>
 
 
-    <div class="hint">
-        👆 入れたい列をタップ！
+    <div
+        class="player"
+        id="player2"
+    >
+
+        <div class="player-symbol">
+            △
+        </div>
+
+        P3
+
     </div>
 
 
-    <button onclick="resetGame()">
-        🔄 ゲームをリセット
-    </button>
+    <div
+        class="player"
+        id="player3"
+    >
+
+        <div class="player-symbol">
+            □
+        </div>
+
+        P4
+
+    </div>
+
+
+</div>
+
+
+<div
+    class="board-wrapper"
+    id="boardWrapper"
+>
+
+    <div
+        id="board"
+        class="board"
+    ></div>
+
+</div>
+
+
+<div class="hint">
+    👆 自分の番になったら列をタップ！
+</div>
+
+
+<button
+    onclick="resetGame()"
+>
+
+    🔄 ゲームをリセット
+
+</button>
+
 
 </div>
 
 
 <div id="resultOverlay">
 
+
     <div class="result-box">
+
 
         <div id="resultText"></div>
 
-        <button onclick="resetGame()">
+
+        <button
+            onclick="resetGame()"
+        >
+
             🔄 もう一回遊ぶ
+
         </button>
 
+
     </div>
+
 
 </div>
 
 
+
 <script>
 
+/* =====================================================
+   SUPABASE設定
+===================================================== */
+
+
+/*
+   ★ ここはあなたがくれた情報
+
+   REST APIの /rest/v1/ は付けない
+*/
+
+const SUPABASE_URL =
+    "https://adjftdxlyvjlaumpejkh.supabase.co";
+
+
+const SUPABASE_KEY =
+    "sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q";
+
+
+const supabase =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* =====================================================
+   ゲーム設定
+===================================================== */
+
 const ROWS = 6;
+
 const COLS = 8;
+
+const MAX_PLAYERS = 4;
+
+
+/* =====================================================
+   プレイヤー
+===================================================== */
 
 const players = [
 
@@ -616,18 +882,142 @@ const players = [
 
 ];
 
+
+/* =====================================================
+   URLからルームIDを取得
+===================================================== */
+
+const urlParams =
+    new URLSearchParams(
+        window.location.search
+    );
+
+
+let roomId =
+    urlParams.get("room");
+
+
+/*
+   ?room= がなかった場合
+*/
+
+if(!roomId){
+
+    roomId =
+        Math.floor(
+            1000 +
+            Math.random() * 9000
+        ).toString();
+
+
+    /*
+       URLを書き換える
+
+       例：
+       game.html?room=5832
+    */
+
+    const newUrl =
+        window.location.pathname +
+        "?room=" +
+        roomId;
+
+    window.history.replaceState(
+        {},
+        "",
+        newUrl
+    );
+
+}
+
+
+/* =====================================================
+   ルーム表示
+===================================================== */
+
+document
+    .getElementById("roomIdDisplay")
+    .textContent = roomId;
+
+
+/* =====================================================
+   自分を識別するID
+===================================================== */
+
+let clientId =
+    localStorage.getItem(
+        "4mokoroshi-client-id"
+    );
+
+
+if(!clientId){
+
+    clientId =
+        crypto.randomUUID();
+
+    localStorage.setItem(
+        "4mokoroshi-client-id",
+        clientId
+    );
+
+}
+
+
+/*
+   同じブラウザで別ルームに入っても
+   同じclientIdを使う
+*/
+
+
+/* =====================================================
+   ゲーム状態
+===================================================== */
+
 let board = [];
+
 let currentPlayer = 0;
+
 let gameOver = false;
 
+let myPlayer = -1;
 
-/* =========================
-   ゲーム開始
-========================= */
 
-function initGame(){
+/*
+   盤面の更新番号
 
-    board = [];
+   古い通信で新しい盤面が
+   上書きされないようにする
+*/
+
+let gameVersion = 0;
+
+
+/* =====================================================
+   Presence情報
+===================================================== */
+
+let channel = null;
+
+let presencePlayers = [];
+
+
+/*
+   入室した時刻
+
+   同時アクセス時の順番決定用
+*/
+
+const joinedAt =
+    Date.now();
+
+
+/* =====================================================
+   ゲーム初期状態
+===================================================== */
+
+function createEmptyBoard(){
+
+    const newBoard = [];
 
     for(
         let row = 0;
@@ -635,7 +1025,7 @@ function initGame(){
         row++
     ){
 
-        board[row] = [];
+        newBoard[row] = [];
 
         for(
             let col = 0;
@@ -643,27 +1033,46 @@ function initGame(){
             col++
         ){
 
-            board[row][col] = null;
+            newBoard[row][col] = null;
 
         }
 
     }
 
+    return newBoard;
+
+}
+
+
+/* =====================================================
+   ゲーム初期化
+===================================================== */
+
+function initLocalGame(){
+
+    board =
+        createEmptyBoard();
+
     currentPlayer = 0;
+
     gameOver = false;
 
-
-    /*
-       ★ 前の勝利ラインを完全削除
-    */
-
-    document
-        .querySelectorAll(".win-line")
-        .forEach(line => line.remove());
+    gameVersion = 0;
 
 
     document
-        .getElementById("resultOverlay")
+        .querySelectorAll(
+            ".win-line"
+        )
+        .forEach(
+            line => line.remove()
+        );
+
+
+    document
+        .getElementById(
+            "resultOverlay"
+        )
         .style.display = "none";
 
 
@@ -674,14 +1083,17 @@ function initGame(){
 }
 
 
-/* =========================
+/* =====================================================
    盤面作成
-========================= */
+===================================================== */
 
 function createBoard(){
 
     const boardElement =
-        document.getElementById("board");
+        document.getElementById(
+            "board"
+        );
+
 
     boardElement.innerHTML = "";
 
@@ -699,22 +1111,36 @@ function createBoard(){
         ){
 
             const cell =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
 
-            cell.className = "cell";
+            cell.className =
+                "cell";
 
-            cell.dataset.row = row;
-            cell.dataset.col = col;
+
+            cell.dataset.row =
+                row;
+
+
+            cell.dataset.col =
+                col;
 
 
             cell.addEventListener(
                 "click",
-                () => dropPiece(col)
+                () => {
+
+                    dropPiece(col);
+
+                }
             );
 
 
-            boardElement.appendChild(cell);
+            boardElement.appendChild(
+                cell
+            );
 
         }
 
@@ -723,23 +1149,737 @@ function createBoard(){
 }
 
 
-/* =========================
-   コマを落とす
-========================= */
+/* =====================================================
+   Supabase Realtime接続
+===================================================== */
 
-function dropPiece(col){
+async function connectRoom(){
+
+    setStatus(
+        "接続中..."
+    );
+
+
+    /*
+       ルームIDごとに別チャンネル
+    */
+
+    channel =
+        supabase.channel(
+            "4mokoroshi-room-" +
+            roomId,
+
+            {
+                config:{
+                    /*
+                       今回は公開ルーム
+                    */
+                    presence:{
+                        key:clientId
+                    },
+
+                    broadcast:{
+                        self:false
+                    }
+                }
+            }
+        );
+
+
+    /*
+       Broadcast
+
+       誰かが手を打った時
+    */
+
+    channel.on(
+        "broadcast",
+        {
+            event:"game_move"
+        },
+        payload => {
+
+            receiveMove(
+                payload.payload
+            );
+
+        }
+    );
+
+
+    /*
+       Broadcast
+
+       ゲーム状態の同期
+    */
+
+    channel.on(
+        "broadcast",
+        {
+            event:"game_state"
+        },
+        payload => {
+
+            receiveGameState(
+                payload.payload
+            );
+
+        }
+    );
+
+
+    /*
+       リセット
+    */
+
+    channel.on(
+        "broadcast",
+        {
+            event:"game_reset"
+        },
+        payload => {
+
+            receiveReset(
+                payload.payload
+            );
+
+        }
+    );
+
+
+    /*
+       Presence
+
+       プレイヤーが入った・抜けた
+    */
+
+    channel.on(
+        "presence",
+        {
+            event:"sync"
+        },
+        () => {
+
+            updatePresencePlayers();
+
+        }
+    );
+
+
+    channel.on(
+        "presence",
+        {
+            event:"join"
+        },
+        () => {
+
+            updatePresencePlayers();
+
+        }
+    );
+
+
+    channel.on(
+        "presence",
+        {
+            event:"leave"
+        },
+        () => {
+
+            updatePresencePlayers();
+
+        }
+    );
+
+
+    /*
+       接続
+    */
+
+    channel.subscribe(
+        async status => {
+
+            if(
+                status === "SUBSCRIBED"
+            ){
+
+                setStatus(
+                    "オンライン接続済み ✓"
+                );
+
+
+                /*
+                   自分の存在を登録
+                */
+
+                await channel.track({
+
+                    clientId:clientId,
+
+                    joinedAt:joinedAt
+
+                });
+
+
+                /*
+                   少し待ってから
+                   プレイヤー番号を決める
+                */
+
+                setTimeout(
+                    () => {
+
+                        updatePresencePlayers();
+
+                    },
+                    300
+                );
+
+            }
+
+
+            if(
+                status === "CHANNEL_ERROR"
+            ){
+
+                setStatus(
+                    "接続エラー"
+                );
+
+            }
+
+
+            if(
+                status === "TIMED_OUT"
+            ){
+
+                setStatus(
+                    "接続タイムアウト"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   Presenceからプレイヤー順を作る
+===================================================== */
+
+function updatePresencePlayers(){
+
+    if(!channel){
+        return;
+    }
+
+
+    const state =
+        channel.presenceState();
+
+
+    const allPlayers = [];
+
+
+    Object.keys(state)
+        .forEach(key => {
+
+            const entries =
+                state[key];
+
+
+            entries.forEach(entry => {
+
+                if(
+                    entry &&
+                    entry.clientId
+                ){
+
+                    allPlayers.push({
+
+                        clientId:
+                            entry.clientId,
+
+                        joinedAt:
+                            Number(
+                                entry.joinedAt
+                            ) || 0
+
+                    });
+
+                }
+
+            });
+
+        });
+
+
+    /*
+       重複clientIdを削除
+    */
+
+    const unique =
+        new Map();
+
+
+    allPlayers.forEach(player => {
+
+        unique.set(
+            player.clientId,
+            player
+        );
+
+    });
+
+
+    /*
+       入室時刻順
+
+       同時ならclientId順
+    */
+
+    const sorted =
+        Array.from(
+            unique.values()
+        ).sort(
+            (a,b) => {
+
+                if(
+                    a.joinedAt !==
+                    b.joinedAt
+                ){
+
+                    return (
+                        a.joinedAt -
+                        b.joinedAt
+                    );
+
+                }
+
+                return a.clientId
+                    .localeCompare(
+                        b.clientId
+                    );
+
+            }
+        );
+
+
+    presencePlayers =
+        sorted;
+
+
+    /*
+       自分の番号を探す
+    */
+
+    const index =
+        sorted.findIndex(
+            player =>
+                player.clientId ===
+                clientId
+        );
+
+
+    if(
+        index >= 0 &&
+        index < MAX_PLAYERS
+    ){
+
+        myPlayer = index;
+
+    }
+    else{
+
+        myPlayer = -1;
+
+    }
+
+
+    updateMyPlayerDisplay();
+
+
+    /*
+       プレイヤー表示を更新
+    */
+
+    updatePlayerCards();
+
+
+    /*
+       新しく入った人がいる場合、
+       現在のゲーム状態を同期
+    */
+
+    broadcastStateSoon();
+
+}
+
+
+/* =====================================================
+   自分のプレイヤー表示
+===================================================== */
+
+function updateMyPlayerDisplay(){
+
+    const display =
+        document.getElementById(
+            "myPlayerDisplay"
+        );
+
+
+    if(myPlayer >= 0){
+
+        display.textContent =
+            players[myPlayer].name +
+            "「" +
+            players[myPlayer].symbol +
+            "」";
+
+    }
+    else{
+
+        display.textContent =
+            "観戦";
+
+    }
+
+}
+
+
+/* =====================================================
+   プレイヤーカード
+===================================================== */
+
+function updatePlayerCards(){
+
+    for(
+        let i = 0;
+        i < MAX_PLAYERS;
+        i++
+    ){
+
+        const card =
+            document.getElementById(
+                "player" + i
+            );
+
+
+        card.style.opacity =
+            "0.55";
+
+    }
+
+
+    presencePlayers
+        .slice(0,MAX_PLAYERS)
+        .forEach(
+            (player,index) => {
+
+                const card =
+                    document.getElementById(
+                        "player" +
+                        index
+                    );
+
+
+                card.style.opacity =
+                    "1";
+
+            }
+        );
+
+
+    /*
+       現在のターン
+    */
+
+    document
+        .querySelectorAll(
+            ".player"
+        )
+        .forEach(
+            element =>
+                element.classList
+                    .remove(
+                        "active"
+                    )
+        );
+
+
+    const active =
+        document.getElementById(
+            "player" +
+            currentPlayer
+        );
+
+
+    if(active){
+
+        active.classList.add(
+            "active"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   状態同期を少し遅らせる
+===================================================== */
+
+let stateTimer = null;
+
+
+function broadcastStateSoon(){
+
+    clearTimeout(
+        stateTimer
+    );
+
+
+    stateTimer =
+        setTimeout(
+            () => {
+
+                broadcastGameState();
+
+            },
+            250
+        );
+
+}
+
+
+/* =====================================================
+   ゲーム状態送信
+===================================================== */
+
+async function broadcastGameState(){
+
+    if(!channel){
+        return;
+    }
+
+
+    /*
+       自分の状態をPresenceにも入れる
+
+       新規参加者が現在状態を
+       取得できるようにする
+    */
+
+    await channel.track({
+
+        clientId:clientId,
+
+        joinedAt:joinedAt,
+
+        gameState:{
+
+            board:board,
+
+            currentPlayer:
+                currentPlayer,
+
+            gameOver:
+                gameOver,
+
+            version:
+                gameVersion
+
+        }
+
+    });
+
+
+    /*
+       Broadcastも送る
+    */
+
+    await channel.send({
+
+        type:"broadcast",
+
+        event:"game_state",
+
+        payload:{
+
+            board:board,
+
+            currentPlayer:
+                currentPlayer,
+
+            gameOver:
+                gameOver,
+
+            version:
+                gameVersion
+
+        }
+
+    });
+
+}
+
+
+/* =====================================================
+   新しいゲーム状態を受信
+===================================================== */
+
+function receiveGameState(data){
+
+    if(!data){
+        return;
+    }
+
+
+    /*
+       自分より古い状態なら無視
+    */
+
+    if(
+        typeof data.version === "number" &&
+        data.version < gameVersion
+    ){
+
+        return;
+
+    }
+
+
+    if(
+        !Array.isArray(
+            data.board
+        )
+    ){
+
+        return;
+
+    }
+
+
+    board =
+        data.board.map(
+            row =>
+                Array.isArray(row)
+                    ? [...row]
+                    : row
+        );
+
+
+    currentPlayer =
+        Number(
+            data.currentPlayer
+        ) || 0;
+
+
+    gameOver =
+        Boolean(
+            data.gameOver
+        );
+
+
+    gameVersion =
+        Number(
+            data.version
+        ) || 0;
+
+
+    renderBoard();
+
+    updateTurn();
+
+
+    /*
+       終了済みゲームなら
+       勝利線を再表示
+    */
+
+    if(gameOver){
+
+        const winner =
+            findWinnerFromBoard();
+
+
+        if(winner){
+
+            highlightWinningCells(
+                winner.line
+            );
+
+            drawWinLine(
+                winner.line
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   コマを落とす
+===================================================== */
+
+async function dropPiece(col){
+
+    /*
+       オンライン接続前
+    */
+
+    if(!channel){
+        return;
+    }
+
+
+    /*
+       観戦者
+    */
+
+    if(myPlayer < 0){
+
+        alert(
+            "このルームは4人参加中です。\n観戦モードです。"
+        );
+
+        return;
+
+    }
+
+
+    /*
+       自分のターンではない
+    */
+
+    if(
+        currentPlayer !== myPlayer
+    ){
+
+        return;
+
+    }
+
+
+    /*
+       ゲーム終了
+    */
 
     if(gameOver){
         return;
     }
 
 
+    /*
+       下から探す
+    */
+
     let targetRow = -1;
 
-
-    /*
-       下から空いている場所を探す
-    */
 
     for(
         let row = ROWS - 1;
@@ -752,6 +1892,7 @@ function dropPiece(col){
         ){
 
             targetRow = row;
+
             break;
 
         }
@@ -759,73 +1900,104 @@ function dropPiece(col){
     }
 
 
-    if(targetRow === -1){
+    /*
+       列がいっぱい
+    */
+
+    if(
+        targetRow === -1
+    ){
+
         return;
+
     }
 
 
+    /*
+       自分のコマ
+    */
+
     board[targetRow][col] =
-        currentPlayer;
-
-
-    renderBoard();
+        myPlayer;
 
 
     /*
-       ★ 勝利判定
+       勝利判定
     */
 
     const winningLine =
         findWinningLine(
             targetRow,
             col,
-            currentPlayer
+            myPlayer
         );
+
+
+    let nextPlayer =
+        currentPlayer;
+
+
+    let nextGameOver =
+        false;
 
 
     if(winningLine){
 
-        gameOver = true;
+        nextGameOver = true;
+
+    }
+    else if(
+        isBoardFull()
+    ){
+
+        nextGameOver = true;
+
+    }
+    else{
+
+        nextPlayer =
+            (
+                currentPlayer + 1
+            ) %
+            MAX_PLAYERS;
+
+    }
 
 
-        /*
-           勝った4マスを光らせる
-        */
+    /*
+       バージョンアップ
+    */
 
-        highlightWinningCells(
-            winningLine
+    gameVersion++;
+
+
+    currentPlayer =
+        nextPlayer;
+
+
+    gameOver =
+        nextGameOver;
+
+
+    /*
+       自分の画面を更新
+    */
+
+    renderBoard();
+
+    updateTurn();
+
+
+    /*
+       勝利演出
+    */
+
+    if(winningLine){
+
+        playWinAnimation(
+            winningLine,
+            myPlayer
         );
-
-
-        /*
-           まず線を描く
-        */
-
-        drawWinLine(
-            winningLine
-        );
-
-
-        /*
-           ★ 線が0.9秒で描き終わってから
-           勝利画面を表示
-        */
-
-        setTimeout(
-            () => {
-
-                showResult(
-                    players[currentPlayer]
-                        .symbol +
-                    "の勝ち！"
-                );
-
-            },
-            950
-        );
-
-
-        return;
 
     }
 
@@ -834,9 +2006,10 @@ function dropPiece(col){
        引き分け
     */
 
-    if(isBoardFull()){
-
-        gameOver = true;
+    if(
+        !winningLine &&
+        isBoardFull()
+    ){
 
         setTimeout(
             () => {
@@ -849,66 +2022,284 @@ function dropPiece(col){
             300
         );
 
+    }
+
+
+    /*
+       他の全員へ送信
+    */
+
+    await channel.send({
+
+        type:"broadcast",
+
+        event:"game_move",
+
+        payload:{
+
+            row:
+                targetRow,
+
+            col:
+                col,
+
+            player:
+                myPlayer,
+
+            currentPlayer:
+                currentPlayer,
+
+            gameOver:
+                gameOver,
+
+            version:
+                gameVersion,
+
+            winningLine:
+                winningLine
+
+        }
+
+    });
+
+
+    /*
+       新規参加者用に状態保存
+    */
+
+    broadcastStateSoon();
+
+}
+
+
+/* =====================================================
+   他のプレイヤーの手を受信
+===================================================== */
+
+function receiveMove(data){
+
+    if(!data){
+        return;
+    }
+
+
+    /*
+       古い通信
+    */
+
+    if(
+        typeof data.version === "number" &&
+        data.version <= gameVersion
+    ){
+
+        return;
+
+    }
+
+
+    const row =
+        Number(data.row);
+
+    const col =
+        Number(data.col);
+
+    const player =
+        Number(data.player);
+
+
+    if(
+        row < 0 ||
+        row >= ROWS ||
+        col < 0 ||
+        col >= COLS
+    ){
+
+        return;
+
+    }
+
+
+    if(
+        player < 0 ||
+        player >= MAX_PLAYERS
+    ){
+
         return;
 
     }
 
 
     /*
-       次のプレイヤー
+       すでに置かれていたら無視
     */
 
-    currentPlayer++;
-
     if(
-        currentPlayer >=
-        players.length
+        board[row][col] !== null
     ){
 
-        currentPlayer = 0;
+        return;
 
     }
 
 
+    board[row][col] =
+        player;
+
+
+    currentPlayer =
+        Number(
+            data.currentPlayer
+        );
+
+
+    gameOver =
+        Boolean(
+            data.gameOver
+        );
+
+
+    gameVersion =
+        Number(
+            data.version
+        ) || (
+            gameVersion + 1
+        );
+
+
+    renderBoard();
+
     updateTurn();
+
+
+    /*
+       勝利
+    */
+
+    if(
+        data.winningLine
+    ){
+
+        playWinAnimation(
+            data.winningLine,
+            player
+        );
+
+    }
+    else if(
+        gameOver
+    ){
+
+        setTimeout(
+            () => {
+
+                showResult(
+                    "引き分け！"
+                );
+
+            },
+            300
+        );
+
+    }
+
+
+    /*
+       新規参加者用に状態を更新
+    */
+
+    broadcastStateSoon();
 
 }
 
 
-/* =========================
+/* =====================================================
+   勝利演出
+===================================================== */
+
+function playWinAnimation(
+    winningLine,
+    winner
+){
+
+    highlightWinningCells(
+        winningLine
+    );
+
+
+    drawWinLine(
+        winningLine
+    );
+
+
+    /*
+       線が描き終わってから表示
+    */
+
+    setTimeout(
+        () => {
+
+            showResult(
+                players[winner]
+                    .symbol +
+                "の勝ち！"
+            );
+
+        },
+        950
+    );
+
+}
+
+
+/* =====================================================
    盤面表示
-========================= */
+===================================================== */
 
 function renderBoard(){
 
     const cells =
-        document.querySelectorAll(".cell");
+        document.querySelectorAll(
+            ".cell"
+        );
 
 
     cells.forEach(cell => {
 
         const row =
-            Number(cell.dataset.row);
+            Number(
+                cell.dataset.row
+            );
+
 
         const col =
-            Number(cell.dataset.col);
+            Number(
+                cell.dataset.col
+            );
 
 
         cell.textContent = "";
 
-        cell.className = "cell";
+        cell.className =
+            "cell";
 
 
         if(
             board[row][col] !== null
         ){
 
-            cell.textContent =
+            const player =
                 players[
                     board[row][col]
-                ].symbol;
+                ];
 
-            cell.classList.add("drop");
+
+            cell.textContent =
+                player.symbol;
+
+
+            cell.classList.add(
+                "drop"
+            );
 
         }
 
@@ -917,9 +2308,9 @@ function renderBoard(){
 }
 
 
-/* =========================
-   ★ 勝利ラインを探す
-========================= */
+/* =====================================================
+   勝利判定
+===================================================== */
 
 function findWinningLine(
     row,
@@ -927,103 +2318,48 @@ function findWinningLine(
     player
 ){
 
-    /*
-       横 →
-       両方向を調べる
-    */
+    const directions = [
 
-    let line =
-        getLineBothWays(
-            row,
-            col,
-            0,
-            1,
-            player
-        );
+        [0,1],
+
+        [1,0],
+
+        [1,1],
+
+        [1,-1]
+
+    ];
 
 
-    if(line.length >= 4){
+    for(
+        const [
+            dr,
+            dc
+        ]
+        of directions
+    ){
 
-        return chooseFour(
-            line,
-            row,
-            col
-        );
-
-    }
-
-
-    /*
-       縦 ↓
-    */
-
-    line =
-        getLineBothWays(
-            row,
-            col,
-            1,
-            0,
-            player
-        );
+        const line =
+            getLineBothWays(
+                row,
+                col,
+                dr,
+                dc,
+                player
+            );
 
 
-    if(line.length >= 4){
+        if(
+            line.length >= 4
+        ){
 
-        return chooseFour(
-            line,
-            row,
-            col
-        );
+            return chooseFour(
+                line,
+                row,
+                col
+            );
 
-    }
-
-
-    /*
-       斜め ↘
-    */
-
-    line =
-        getLineBothWays(
-            row,
-            col,
-            1,
-            1,
-            player
-        );
-
-
-    if(line.length >= 4){
-
-        return chooseFour(
-            line,
-            row,
-            col
-        );
-
-    }
-
-
-    /*
-       斜め ↙
-    */
-
-    line =
-        getLineBothWays(
-            row,
-            col,
-            1,
-            -1,
-            player
-        );
-
-
-    if(line.length >= 4){
-
-        return chooseFour(
-            line,
-            row,
-            col
-        );
+        }
 
     }
 
@@ -1033,9 +2369,9 @@ function findWinningLine(
 }
 
 
-/* =========================
-   同じ記号を両方向に探す
-========================= */
+/* =====================================================
+   両方向検索
+===================================================== */
 
 function getLineBothWays(
     row,
@@ -1048,12 +2384,11 @@ function getLineBothWays(
     const line = [];
 
 
-    /*
-       逆方向
-    */
+    let r =
+        row - dr;
 
-    let r = row - dr;
-    let c = col - dc;
+    let c =
+        col - dc;
 
 
     while(
@@ -1065,33 +2400,35 @@ function getLineBothWays(
     ){
 
         line.unshift({
+
             row:r,
+
             col:c
+
         });
 
 
         r -= dr;
+
         c -= dc;
 
     }
 
 
-    /*
-       自分
-    */
-
     line.push({
+
         row:row,
+
         col:col
+
     });
 
 
-    /*
-       正方向
-    */
+    r =
+        row + dr;
 
-    r = row + dr;
-    c = col + dc;
+    c =
+        col + dc;
 
 
     while(
@@ -1103,12 +2440,16 @@ function getLineBothWays(
     ){
 
         line.push({
+
             row:r,
+
             col:c
+
         });
 
 
         r += dr;
+
         c += dc;
 
     }
@@ -1119,9 +2460,9 @@ function getLineBothWays(
 }
 
 
-/* =========================
-   4個だけ選ぶ
-========================= */
+/* =====================================================
+   4個を選ぶ
+===================================================== */
 
 function chooseFour(
     line,
@@ -1129,14 +2470,14 @@ function chooseFour(
     col
 ){
 
-    if(line.length === 4){
+    if(
+        line.length === 4
+    ){
+
         return line;
+
     }
 
-
-    /*
-       今置いたコマの位置
-    */
 
     const index =
         line.findIndex(
@@ -1146,12 +2487,7 @@ function chooseFour(
         );
 
 
-    /*
-       置いたコマを必ず含む
-       4個を選択
-    */
-
-    let start =
+    const start =
         Math.max(
             0,
             Math.min(
@@ -1169,40 +2505,56 @@ function chooseFour(
 }
 
 
-/* =========================
-   勝った4個を光らせる
-========================= */
+/* =====================================================
+   勝利マスを光らせる
+===================================================== */
 
 function highlightWinningCells(
     line
 ){
 
-    line.forEach(position => {
+    line.forEach(
+        position => {
 
-        const cell =
-            document.querySelector(
-                `.cell[data-row="${position.row}"][data-col="${position.col}"]`
-            );
+            const cell =
+                document.querySelector(
+                    `.cell[data-row="${position.row}"][data-col="${position.col}"]`
+                );
 
 
-        if(cell){
+            if(cell){
 
-            cell.classList.add(
-                "winning-cell"
-            );
+                cell.classList.add(
+                    "winning-cell"
+                );
+
+            }
 
         }
-
-    });
+    );
 
 }
 
 
-/* =========================
-   ★ チョーク線を描く
-========================= */
+/* =====================================================
+   チョーク線
+===================================================== */
 
 function drawWinLine(line){
+
+    /*
+       同じ線が残っていたら消す
+    */
+
+    document
+        .querySelectorAll(
+            ".win-line"
+        )
+        .forEach(
+            line =>
+                line.remove()
+        );
+
 
     const wrapper =
         document.getElementById(
@@ -1226,7 +2578,9 @@ function drawWinLine(line){
         !firstCell ||
         !lastCell
     ){
+
         return;
+
     }
 
 
@@ -1241,10 +2595,6 @@ function drawWinLine(line){
     const lastRect =
         lastCell.getBoundingClientRect();
 
-
-    /*
-       マスの中心
-    */
 
     const x1 =
         firstRect.left -
@@ -1270,12 +2620,12 @@ function drawWinLine(line){
         lastRect.height / 2;
 
 
-    /*
-       長さ
-    */
+    const dx =
+        x2 - x1;
 
-    const dx = x2 - x1;
-    const dy = y2 - y1;
+
+    const dy =
+        y2 - y1;
 
 
     const length =
@@ -1284,10 +2634,6 @@ function drawWinLine(line){
             dy * dy
         );
 
-
-    /*
-       角度
-    */
 
     const angle =
         Math.atan2(
@@ -1298,12 +2644,10 @@ function drawWinLine(line){
         Math.PI;
 
 
-    /*
-       線を作る
-    */
-
     const winLine =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     winLine.className =
@@ -1322,12 +2666,6 @@ function drawWinLine(line){
         y1 + "px";
 
 
-    /*
-       ★ 回転はJS側
-       アニメーションでは
-       transformを触らない
-    */
-
     winLine.style.transform =
         `rotate(${angle}deg)`;
 
@@ -1339,9 +2677,9 @@ function drawWinLine(line){
 }
 
 
-/* =========================
-   全マス埋まった？
-========================= */
+/* =====================================================
+   盤面全部埋まった？
+===================================================== */
 
 function isBoardFull(){
 
@@ -1366,9 +2704,70 @@ function isBoardFull(){
 }
 
 
-/* =========================
+/* =====================================================
+   現在の盤面から勝者を探す
+===================================================== */
+
+function findWinnerFromBoard(){
+
+    for(
+        let row = 0;
+        row < ROWS;
+        row++
+    ){
+
+        for(
+            let col = 0;
+            col < COLS;
+            col++
+        ){
+
+            if(
+                board[row][col] === null
+            ){
+
+                continue;
+
+            }
+
+
+            const player =
+                board[row][col];
+
+
+            const line =
+                findWinningLine(
+                    row,
+                    col,
+                    player
+                );
+
+
+            if(line){
+
+                return {
+
+                    player:player,
+
+                    line:line
+
+                };
+
+            }
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+/* =====================================================
    ターン表示
-========================= */
+===================================================== */
 
 function updateTurn(){
 
@@ -1376,88 +2775,220 @@ function updateTurn(){
         players[currentPlayer];
 
 
-    document
-        .getElementById("turnDisplay")
-        .textContent =
+    const display =
+        document.getElementById(
+            "turnDisplay"
+        );
+
+
+    if(gameOver){
+
+        display.textContent =
+            "ゲーム終了";
+
+    }
+    else{
+
+        display.textContent =
             player.name +
             "「" +
             player.symbol +
             "」の番";
 
+    }
+
+
+    updatePlayerCards();
+
+}
+
+
+/* =====================================================
+   接続状態
+===================================================== */
+
+function setStatus(text){
 
     document
-        .querySelectorAll(".player")
+        .getElementById(
+            "statusText"
+        )
+        .textContent = text;
+
+}
+
+
+/* =====================================================
+   結果表示
+===================================================== */
+
+function showResult(message){
+
+    document
+        .getElementById(
+            "resultText"
+        )
+        .textContent =
+            message;
+
+
+    document
+        .getElementById(
+            "resultOverlay"
+        )
+        .style.display =
+            "flex";
+
+}
+
+
+/* =====================================================
+   リセット
+===================================================== */
+
+async function resetGame(){
+
+    /*
+       自分がP1だけリセット可能
+    */
+
+    if(
+        myPlayer !== 0
+    ){
+
+        alert(
+            "ゲームのリセットは\nプレイヤー1が行えます。"
+        );
+
+        return;
+
+    }
+
+
+    board =
+        createEmptyBoard();
+
+
+    currentPlayer = 0;
+
+    gameOver = false;
+
+    gameVersion++;
+
+
+    document
+        .querySelectorAll(
+            ".win-line"
+        )
         .forEach(
-            element =>
-                element.classList.remove(
-                    "active"
-                )
+            line =>
+                line.remove()
         );
 
 
-    const activePlayer =
-        document.getElementById(
-            "player" +
-            currentPlayer
-        );
+    document
+        .getElementById(
+            "resultOverlay"
+        )
+        .style.display =
+            "none";
 
 
-    if(activePlayer){
+    createBoard();
 
-        activePlayer.classList.add(
-            "active"
-        );
+    updateTurn();
+
+
+    /*
+       全員へリセット通知
+    */
+
+    if(channel){
+
+        await channel.send({
+
+            type:"broadcast",
+
+            event:"game_reset",
+
+            payload:{
+
+                version:
+                    gameVersion
+
+            }
+
+        });
+
+
+        broadcastStateSoon();
 
     }
 
 }
 
 
-/* =========================
-   結果表示
-========================= */
+/* =====================================================
+   リセット受信
+===================================================== */
 
-function showResult(message){
+function receiveReset(data){
 
-    document
-        .getElementById("resultText")
-        .textContent = message;
-
-
-    document
-        .getElementById("resultOverlay")
-        .style.display = "flex";
-
-}
+    if(!data){
+        return;
+    }
 
 
-/* =========================
-   リセット
-========================= */
+    board =
+        createEmptyBoard();
 
-function resetGame(){
 
-    /*
-       ★ チョーク線を消す
-    */
+    currentPlayer = 0;
 
-    document
-        .querySelectorAll(".win-line")
-        .forEach(
-            line => line.remove()
+    gameOver = false;
+
+
+    gameVersion =
+        Number(
+            data.version
+        ) || (
+            gameVersion + 1
         );
 
 
-    initGame();
+    document
+        .querySelectorAll(
+            ".win-line"
+        )
+        .forEach(
+            line =>
+                line.remove()
+        );
+
+
+    document
+        .getElementById(
+            "resultOverlay"
+        )
+        .style.display =
+            "none";
+
+
+    createBoard();
+
+    updateTurn();
 
 }
 
 
-/* =========================
-   スタート
-========================= */
+/* =====================================================
+   起動
+===================================================== */
 
-initGame();
+initLocalGame();
+
+
+connectRoom();
 
 </script>
 
