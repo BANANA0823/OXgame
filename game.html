@@ -8,10 +8,6 @@
 
 <style>
 
-/* =====================================
-   基本
-===================================== */
-
 *{
     box-sizing:border-box;
 }
@@ -44,25 +40,13 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
-
-    overflow-x:hidden;
 }
 
-
-/* =====================================
-   黒板の質感
-===================================== */
-
 body::before{
-
     content:"";
-
     position:fixed;
-
     inset:0;
-
     pointer-events:none;
-
     opacity:0.12;
 
     background-image:
@@ -72,76 +56,36 @@ body::before{
             transparent 7px,
             rgba(255,255,255,0.06) 8px
         );
-
-    z-index:-1;
-
 }
-
-
-/* =====================================
-   全体
-===================================== */
 
 .game-container{
-
     width:100%;
-
     max-width:760px;
-
     padding:18px;
-
 }
 
-
-/* =====================================
-   タイトル
-===================================== */
-
 h1{
-
-    margin:
-        0 0 5px;
-
+    margin:0 0 5px;
     text-align:center;
 
     font-size:
-        clamp(
-            30px,
-            8vw,
-            52px
-        );
+        clamp(30px,8vw,52px);
 
     color:#fff;
 
     text-shadow:
-        2px 2px 0
-        rgba(255,255,255,0.15),
         0 0 8px
-        rgba(255,255,255,0.15);
-
+        rgba(255,255,255,0.2);
 }
-
 
 .description{
-
     text-align:center;
-
-    color:
-        rgba(255,255,255,0.75);
-
+    color:rgba(255,255,255,0.75);
     margin-bottom:15px;
-
 }
 
-
-/* =====================================
-   ターン表示
-===================================== */
-
 .turn-box{
-
     padding:14px;
-
     margin-bottom:12px;
 
     border:
@@ -149,7 +93,6 @@ h1{
         rgba(255,255,255,0.35);
 
     border-radius:12px;
-
     text-align:center;
 
     background:
@@ -158,30 +101,18 @@ h1{
     box-shadow:
         inset 0 0 15px
         rgba(0,0,0,0.15);
-
 }
-
 
 .turn-label{
-
     font-size:14px;
-
-    color:
-        rgba(255,255,255,0.65);
-
+    color:rgba(255,255,255,0.65);
 }
 
-
 #turnDisplay{
-
     margin-top:3px;
 
     font-size:
-        clamp(
-            27px,
-            8vw,
-            42px
-        );
+        clamp(27px,8vw,42px);
 
     font-weight:bold;
 
@@ -190,30 +121,16 @@ h1{
     text-shadow:
         0 0 10px
         rgba(255,255,255,0.35);
-
 }
-
-
-/* =====================================
-   プレイヤー一覧
-===================================== */
 
 .players{
-
     display:grid;
-
-    grid-template-columns:
-        repeat(4,1fr);
-
+    grid-template-columns:repeat(4,1fr);
     gap:8px;
-
     margin-bottom:15px;
-
 }
 
-
 .player{
-
     padding:8px 4px;
 
     border:
@@ -221,43 +138,27 @@ h1{
         rgba(255,255,255,0.25);
 
     border-radius:10px;
-
     text-align:center;
 
     background:
         rgba(0,0,0,0.15);
 
-    color:#fff;
-
-    transition:
-        0.2s;
-
+    transition:0.2s;
 }
 
-
 .player-symbol{
-
     font-size:27px;
-
     font-weight:bold;
 
     color:#fff;
 
     text-shadow:
-        0 0 5px
+        0 0 6px
         rgba(255,255,255,0.4);
-
 }
 
-
-/* =====================================
-   ✨ 今のプレイヤー
-===================================== */
-
 .player.active{
-
-    transform:
-        scale(1.06);
+    transform:scale(1.06);
 
     border-color:#fff;
 
@@ -265,22 +166,14 @@ h1{
         rgba(255,255,255,0.12);
 
     box-shadow:
-
         0 0 8px
         rgba(255,255,255,0.8),
 
         0 0 22px
         rgba(255,255,255,0.4);
-
 }
 
-
-/* =====================================
-   黒板のゲーム盤
-===================================== */
-
 .board-wrapper{
-
     position:relative;
 
     padding:11px;
@@ -292,7 +185,6 @@ h1{
     border-radius:8px;
 
     background:
-
         radial-gradient(
             circle at 50% 50%,
             #25583d,
@@ -300,46 +192,26 @@ h1{
         );
 
     box-shadow:
-
         inset 0 0 25px
         rgba(0,0,0,0.4),
 
         0 8px 25px
         rgba(0,0,0,0.35);
-
 }
 
-
-/* =====================================
-   盤面
-===================================== */
-
 .board{
-
     position:relative;
 
     display:grid;
-
-    grid-template-columns:
-        repeat(8,1fr);
-
+    grid-template-columns:repeat(8,1fr);
     gap:6px;
-
 }
 
-
-/* =====================================
-   マス
-===================================== */
-
 .cell{
-
     aspect-ratio:1 / 1;
 
     display:flex;
-
     justify-content:center;
-
     align-items:center;
 
     border:
@@ -349,17 +221,12 @@ h1{
     border-radius:5px;
 
     cursor:pointer;
-
     user-select:none;
 
     color:#fff;
 
     font-size:
-        clamp(
-            24px,
-            7vw,
-            48px
-        );
+        clamp(24px,7vw,48px);
 
     font-weight:bold;
 
@@ -370,132 +237,69 @@ h1{
     transition:
         background 0.15s,
         transform 0.1s;
-
 }
-
 
 .cell:hover{
-
     background:
         rgba(255,255,255,0.07);
-
 }
-
 
 .cell:active{
-
-    transform:
-        scale(0.94);
-
+    transform:scale(0.94);
 }
-
-
-/* =====================================
-   ⚪ 記号は全部白
-===================================== */
-
-.circle,
-.cross,
-.triangle,
-.square{
-
-    color:#fff !important;
-
-}
-
-
-/* =====================================
-   落下アニメーション
-===================================== */
 
 .drop{
-
     animation:
         chalkDrop
         0.35s
         ease-out;
-
 }
-
 
 @keyframes chalkDrop{
 
     0%{
-
-        transform:
-            translateY(-45px);
-
+        transform:translateY(-45px);
         opacity:0;
-
     }
 
     70%{
-
-        transform:
-            translateY(5px);
-
+        transform:translateY(5px);
     }
 
     100%{
-
-        transform:
-            translateY(0);
-
+        transform:translateY(0);
         opacity:1;
-
     }
-
 }
 
-
-/* =====================================
-   🏆 勝利したマス
-===================================== */
+/* 勝利した4個 */
 
 .winning-cell{
-
     animation:
         winningChalk
-        0.7s
+        0.45s
         ease-in-out
         infinite alternate;
-
 }
-
 
 @keyframes winningChalk{
 
     from{
-
         text-shadow:
             0 0 4px white;
-
-        transform:
-            scale(1);
-
     }
 
     to{
-
         text-shadow:
-            0 0 18px white,
-            0 0 30px
+            0 0 15px white,
+            0 0 25px
             rgba(255,255,255,0.7);
-
-        transform:
-            scale(1.08);
-
     }
-
 }
 
-
-/* =====================================
-   🖍️ 勝利ライン
-===================================== */
+/* チョーク線 */
 
 .win-line{
-
     position:absolute;
 
     height:5px;
@@ -508,96 +312,64 @@ h1{
 
     pointer-events:none;
 
-    z-index:20;
+    z-index:50;
 
     box-shadow:
-
         0 0 5px white,
-
         0 0 12px
         rgba(255,255,255,0.7);
 
+    /*
+       transformはJSの回転を使うので、
+       clip-pathだけで線を描く
+    */
+
     animation:
         chalkLine
-        0.5s
-        ease-out;
-
+        0.9s
+        ease-out
+        forwards;
 }
 
-
-/* チョーク線っぽく少し不規則 */
-
 .win-line::after{
-
     content:"";
 
     position:absolute;
-
     left:0;
-
     top:2px;
 
     width:100%;
-
     height:2px;
 
     background:
         rgba(255,255,255,0.45);
-
-    transform:
-        rotate(1deg);
-
 }
-
 
 @keyframes chalkLine{
 
     from{
-
-        transform:
-            scaleX(0);
-
-        opacity:0;
-
+        clip-path:inset(0 100% 0 0);
     }
 
     to{
-
-        opacity:1;
-
+        clip-path:inset(0 0 0 0);
     }
-
 }
 
-
-/* =====================================
-   説明
-===================================== */
-
 .hint{
-
     text-align:center;
 
     margin:13px 0;
 
     color:
         rgba(255,255,255,0.75);
-
 }
 
-
-/* =====================================
-   ボタン
-===================================== */
-
 button{
-
     width:100%;
-
     height:50px;
 
     border:
-
         2px solid
         rgba(255,255,255,0.5);
 
@@ -609,49 +381,28 @@ button{
     color:#fff;
 
     font-size:17px;
-
     font-weight:bold;
 
     cursor:pointer;
-
     font-family:inherit;
-
-    transition:
-        0.15s;
-
 }
-
 
 button:hover{
-
     background:
         rgba(255,255,255,0.12);
-
 }
-
 
 button:active{
-
-    transform:
-        scale(0.97);
-
+    transform:scale(0.97);
 }
 
-
-/* =====================================
-   勝利画面
-===================================== */
-
 #resultOverlay{
-
     position:fixed;
-
     inset:0;
 
     display:none;
 
     justify-content:center;
-
     align-items:center;
 
     padding:20px;
@@ -660,14 +411,10 @@ button:active{
         rgba(0,0,0,0.72);
 
     z-index:1000;
-
 }
 
-
 .result-box{
-
     width:100%;
-
     max-width:430px;
 
     padding:35px 25px;
@@ -690,43 +437,26 @@ button:active{
         resultPop
         0.35s
         ease;
-
 }
-
 
 @keyframes resultPop{
 
     0%{
-
-        transform:
-            scale(0.5);
-
+        transform:scale(0.5);
         opacity:0;
-
     }
 
     100%{
-
-        transform:
-            scale(1);
-
+        transform:scale(1);
         opacity:1;
-
     }
-
 }
 
-
 #resultText{
-
     margin-bottom:25px;
 
     font-size:
-        clamp(
-            34px,
-            10vw,
-            52px
-        );
+        clamp(34px,10vw,52px);
 
     font-weight:bold;
 
@@ -735,64 +465,33 @@ button:active{
     text-shadow:
         0 0 12px
         rgba(255,255,255,0.5);
-
 }
-
-
-.draw-message{
-
-    color:#fff;
-
-}
-
-
-/* =====================================
-   スマホ
-===================================== */
 
 @media(max-width:500px){
 
     .game-container{
-
         padding:10px;
-
     }
-
 
     .board-wrapper{
-
         padding:6px;
-
     }
-
 
     .board{
-
         gap:3px;
-
     }
-
 
     .players{
-
         gap:4px;
-
     }
-
 
     .player{
-
         font-size:12px;
-
     }
-
 
     .player-symbol{
-
         font-size:23px;
-
     }
-
 }
 
 </style>
@@ -801,21 +500,14 @@ button:active{
 
 <body>
 
-
 <div class="game-container">
 
-
     <h1>🎮 4目落とし</h1>
-
 
     <div class="description">
         黒板で遊ぶ、4人用ゲーム
     </div>
 
-
-    <!-- =====================
-         ターン
-    ====================== -->
 
     <div class="turn-box">
 
@@ -830,75 +522,30 @@ button:active{
     </div>
 
 
-    <!-- =====================
-         プレイヤー
-    ====================== -->
-
     <div class="players">
 
-
-        <div
-            class="player"
-            id="player0"
-        >
-
-            <div class="player-symbol">
-                〇
-            </div>
-
+        <div class="player" id="player0">
+            <div class="player-symbol">〇</div>
             P1
-
         </div>
 
-
-        <div
-            class="player"
-            id="player1"
-        >
-
-            <div class="player-symbol">
-                ×
-            </div>
-
+        <div class="player" id="player1">
+            <div class="player-symbol">×</div>
             P2
-
         </div>
 
-
-        <div
-            class="player"
-            id="player2"
-        >
-
-            <div class="player-symbol">
-                △
-            </div>
-
+        <div class="player" id="player2">
+            <div class="player-symbol">△</div>
             P3
-
         </div>
 
-
-        <div
-            class="player"
-            id="player3"
-        >
-
-            <div class="player-symbol">
-                □
-            </div>
-
+        <div class="player" id="player3">
+            <div class="player-symbol">□</div>
             P4
-
         </div>
-
 
     </div>
 
-
-    <!-- =====================
-         ゲーム盤
-    ====================== -->
 
     <div
         class="board-wrapper"
@@ -922,13 +569,8 @@ button:active{
         🔄 ゲームをリセット
     </button>
 
-
 </div>
 
-
-<!-- =====================
-     勝利画面
-====================== -->
 
 <div id="resultOverlay">
 
@@ -947,17 +589,8 @@ button:active{
 
 <script>
 
-/* =====================================
-   🎮 設定
-===================================== */
-
 const ROWS = 6;
 const COLS = 8;
-
-
-/* =====================================
-   👥 プレイヤー
-===================================== */
 
 const players = [
 
@@ -983,21 +616,14 @@ const players = [
 
 ];
 
-
-/* =====================================
-   ゲームデータ
-===================================== */
-
 let board = [];
-
 let currentPlayer = 0;
-
 let gameOver = false;
 
 
-/* =====================================
-   🚀 初期化
-===================================== */
+/* =========================
+   ゲーム開始
+========================= */
 
 function initGame(){
 
@@ -1023,16 +649,21 @@ function initGame(){
 
     }
 
-
     currentPlayer = 0;
-
     gameOver = false;
 
 
+    /*
+       ★ 前の勝利ラインを完全削除
+    */
+
     document
-        .getElementById(
-            "resultOverlay"
-        )
+        .querySelectorAll(".win-line")
+        .forEach(line => line.remove());
+
+
+    document
+        .getElementById("resultOverlay")
         .style.display = "none";
 
 
@@ -1043,17 +674,14 @@ function initGame(){
 }
 
 
-/* =====================================
-   🧱 盤面作成
-===================================== */
+/* =========================
+   盤面作成
+========================= */
 
 function createBoard(){
 
     const boardElement =
-        document.getElementById(
-            "board"
-        );
-
+        document.getElementById("board");
 
     boardElement.innerHTML = "";
 
@@ -1071,32 +699,22 @@ function createBoard(){
         ){
 
             const cell =
-                document.createElement(
-                    "div"
-                );
+                document.createElement("div");
 
 
             cell.className = "cell";
 
-
             cell.dataset.row = row;
-
             cell.dataset.col = col;
 
 
             cell.addEventListener(
                 "click",
-                function(){
-
-                    dropPiece(col);
-
-                }
+                () => dropPiece(col)
             );
 
 
-            boardElement.appendChild(
-                cell
-            );
+            boardElement.appendChild(cell);
 
         }
 
@@ -1105,16 +723,14 @@ function createBoard(){
 }
 
 
-/* =====================================
-   ⬇️ コマを落とす
-===================================== */
+/* =========================
+   コマを落とす
+========================= */
 
 function dropPiece(col){
 
     if(gameOver){
-
         return;
-
     }
 
 
@@ -1122,7 +738,7 @@ function dropPiece(col){
 
 
     /*
-       下から空きを探す
+       下から空いている場所を探す
     */
 
     for(
@@ -1136,7 +752,6 @@ function dropPiece(col){
         ){
 
             targetRow = row;
-
             break;
 
         }
@@ -1144,20 +759,10 @@ function dropPiece(col){
     }
 
 
-    /*
-       列がいっぱい
-    */
-
     if(targetRow === -1){
-
         return;
-
     }
 
-
-    /*
-       コマ配置
-    */
 
     board[targetRow][col] =
         currentPlayer;
@@ -1167,7 +772,7 @@ function dropPiece(col){
 
 
     /*
-       勝利判定
+       ★ 勝利判定
     */
 
     const winningLine =
@@ -1180,20 +785,43 @@ function dropPiece(col){
 
     if(winningLine){
 
+        gameOver = true;
+
+
+        /*
+           勝った4マスを光らせる
+        */
+
         highlightWinningCells(
             winningLine
         );
 
+
+        /*
+           まず線を描く
+        */
 
         drawWinLine(
             winningLine
         );
 
 
-        endGame(
-            players[currentPlayer]
-                .symbol +
-            "の勝ち！"
+        /*
+           ★ 線が0.9秒で描き終わってから
+           勝利画面を表示
+        */
+
+        setTimeout(
+            () => {
+
+                showResult(
+                    players[currentPlayer]
+                        .symbol +
+                    "の勝ち！"
+                );
+
+            },
+            950
         );
 
 
@@ -1208,8 +836,17 @@ function dropPiece(col){
 
     if(isBoardFull()){
 
-        endGame(
-            "引き分け！"
+        gameOver = true;
+
+        setTimeout(
+            () => {
+
+                showResult(
+                    "引き分け！"
+                );
+
+            },
+            300
         );
 
         return;
@@ -1222,7 +859,6 @@ function dropPiece(col){
     */
 
     currentPlayer++;
-
 
     if(
         currentPlayer >=
@@ -1239,62 +875,51 @@ function dropPiece(col){
 }
 
 
-/* =====================================
-   🖥️ 盤面表示
-===================================== */
+/* =========================
+   盤面表示
+========================= */
 
 function renderBoard(){
 
     const cells =
-        document.querySelectorAll(
-            ".cell"
-        );
+        document.querySelectorAll(".cell");
 
 
-    cells.forEach(
-        function(cell){
+    cells.forEach(cell => {
 
-            const row =
-                Number(
-                    cell.dataset.row
-                );
+        const row =
+            Number(cell.dataset.row);
 
-            const col =
-                Number(
-                    cell.dataset.col
-                );
+        const col =
+            Number(cell.dataset.col);
 
 
-            cell.textContent = "";
+        cell.textContent = "";
 
-            cell.className = "cell";
-
-
-            if(
-                board[row][col] !== null
-            ){
-
-                cell.textContent =
-                    players[
-                        board[row][col]
-                    ].symbol;
+        cell.className = "cell";
 
 
-                cell.classList.add(
-                    "drop"
-                );
+        if(
+            board[row][col] !== null
+        ){
 
-            }
+            cell.textContent =
+                players[
+                    board[row][col]
+                ].symbol;
+
+            cell.classList.add("drop");
 
         }
-    );
+
+    });
 
 }
 
 
-/* =====================================
-   🏆 勝利ラインを探す
-===================================== */
+/* =========================
+   ★ 勝利ラインを探す
+========================= */
 
 function findWinningLine(
     row,
@@ -1303,11 +928,12 @@ function findWinningLine(
 ){
 
     /*
-       横
+       横 →
+       両方向を調べる
     */
 
     let line =
-        getLine(
+        getLineBothWays(
             row,
             col,
             0,
@@ -1328,11 +954,11 @@ function findWinningLine(
 
 
     /*
-       縦
+       縦 ↓
     */
 
     line =
-        getLine(
+        getLineBothWays(
             row,
             col,
             1,
@@ -1407,65 +1033,9 @@ function findWinningLine(
 }
 
 
-/* =====================================
-   🔢 片方向
-===================================== */
-
-function getLine(
-    row,
-    col,
-    dr,
-    dc,
-    player
-){
-
-    const line = [
-
-        {
-            row:row,
-            col:col
-        }
-
-    ];
-
-
-    let r =
-        row + dr;
-
-    let c =
-        col + dc;
-
-
-    while(
-
-        r >= 0 &&
-        r < ROWS &&
-        c >= 0 &&
-        c < COLS &&
-        board[r][c] === player
-
-    ){
-
-        line.push({
-            row:r,
-            col:c
-        });
-
-
-        r += dr;
-        c += dc;
-
-    }
-
-
-    return line;
-
-}
-
-
-/* =====================================
-   🔢 両方向
-===================================== */
+/* =========================
+   同じ記号を両方向に探す
+========================= */
 
 function getLineBothWays(
     row,
@@ -1482,28 +1052,21 @@ function getLineBothWays(
        逆方向
     */
 
-    let r =
-        row - dr;
-
-    let c =
-        col - dc;
+    let r = row - dr;
+    let c = col - dc;
 
 
     while(
-
         r >= 0 &&
         r < ROWS &&
         c >= 0 &&
         c < COLS &&
         board[r][c] === player
-
     ){
 
         line.unshift({
-
             row:r,
             col:c
-
         });
 
 
@@ -1518,10 +1081,8 @@ function getLineBothWays(
     */
 
     line.push({
-
         row:row,
         col:col
-
     });
 
 
@@ -1529,28 +1090,21 @@ function getLineBothWays(
        正方向
     */
 
-    r =
-        row + dr;
-
-    c =
-        col + dc;
+    r = row + dr;
+    c = col + dc;
 
 
     while(
-
         r >= 0 &&
         r < ROWS &&
         c >= 0 &&
         c < COLS &&
         board[r][c] === player
-
     ){
 
         line.push({
-
             row:r,
             col:c
-
         });
 
 
@@ -1565,9 +1119,9 @@ function getLineBothWays(
 }
 
 
-/* =====================================
-   🎯 4個だけ選ぶ
-===================================== */
+/* =========================
+   4個だけ選ぶ
+========================= */
 
 function chooseFour(
     line,
@@ -1575,17 +1129,14 @@ function chooseFour(
     col
 ){
 
-    /*
-       4個以上つながっている場合、
-       置いたコマを含む4個を優先
-    */
-
     if(line.length === 4){
-
         return line;
-
     }
 
+
+    /*
+       今置いたコマの位置
+    */
 
     const index =
         line.findIndex(
@@ -1594,6 +1145,11 @@ function chooseFour(
                 cell.col === col
         );
 
+
+    /*
+       置いたコマを必ず含む
+       4個を選択
+    */
 
     let start =
         Math.max(
@@ -1613,40 +1169,38 @@ function chooseFour(
 }
 
 
-/* =====================================
-   ✨ 勝った4マスを光らせる
-===================================== */
+/* =========================
+   勝った4個を光らせる
+========================= */
 
 function highlightWinningCells(
     line
 ){
 
-    line.forEach(
-        function(position){
+    line.forEach(position => {
 
-            const cell =
-                document.querySelector(
-                    `.cell[data-row="${position.row}"][data-col="${position.col}"]`
-                );
+        const cell =
+            document.querySelector(
+                `.cell[data-row="${position.row}"][data-col="${position.col}"]`
+            );
 
 
-            if(cell){
+        if(cell){
 
-                cell.classList.add(
-                    "winning-cell"
-                );
-
-            }
+            cell.classList.add(
+                "winning-cell"
+            );
 
         }
-    );
+
+    });
 
 }
 
 
-/* =====================================
-   🖍️ 4つを線で結ぶ
-===================================== */
+/* =========================
+   ★ チョーク線を描く
+========================= */
 
 function drawWinLine(line){
 
@@ -1672,9 +1226,7 @@ function drawWinLine(line){
         !firstCell ||
         !lastCell
     ){
-
         return;
-
     }
 
 
@@ -1691,7 +1243,7 @@ function drawWinLine(line){
 
 
     /*
-       それぞれのマスの中心
+       マスの中心
     */
 
     const x1 =
@@ -1719,14 +1271,11 @@ function drawWinLine(line){
 
 
     /*
-       距離
+       長さ
     */
 
-    const dx =
-        x2 - x1;
-
-    const dy =
-        y2 - y1;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
 
 
     const length =
@@ -1753,42 +1302,46 @@ function drawWinLine(line){
        線を作る
     */
 
-    const lineElement =
-        document.createElement(
-            "div"
-        );
+    const winLine =
+        document.createElement("div");
 
 
-    lineElement.className =
+    winLine.className =
         "win-line";
 
 
-    lineElement.style.width =
+    winLine.style.width =
         length + "px";
 
 
-    lineElement.style.left =
+    winLine.style.left =
         x1 + "px";
 
 
-    lineElement.style.top =
+    winLine.style.top =
         y1 + "px";
 
 
-    lineElement.style.transform =
+    /*
+       ★ 回転はJS側
+       アニメーションでは
+       transformを触らない
+    */
+
+    winLine.style.transform =
         `rotate(${angle}deg)`;
 
 
     wrapper.appendChild(
-        lineElement
+        winLine
     );
 
 }
 
 
-/* =====================================
-   📦 全マス埋まった？
-===================================== */
+/* =========================
+   全マス埋まった？
+========================= */
 
 function isBoardFull(){
 
@@ -1808,15 +1361,14 @@ function isBoardFull(){
 
     }
 
-
     return true;
 
 }
 
 
-/* =====================================
-   👤 ターン表示
-===================================== */
+/* =========================
+   ターン表示
+========================= */
 
 function updateTurn(){
 
@@ -1824,97 +1376,86 @@ function updateTurn(){
         players[currentPlayer];
 
 
-    const display =
-        document.getElementById(
-            "turnDisplay"
-        );
+    document
+        .getElementById("turnDisplay")
+        .textContent =
+            player.name +
+            "「" +
+            player.symbol +
+            "」の番";
 
-
-    display.textContent =
-        player.name +
-        "「" +
-        player.symbol +
-        "」の番";
-
-
-    /*
-       全員の光を消す
-    */
 
     document
-        .querySelectorAll(
-            ".player"
-        )
+        .querySelectorAll(".player")
         .forEach(
-            function(element){
-
+            element =>
                 element.classList.remove(
                     "active"
-                );
-
-            }
+                )
         );
 
 
-    /*
-       今の人だけ光らせる
-    */
-
-    document
-        .getElementById(
+    const activePlayer =
+        document.getElementById(
             "player" +
             currentPlayer
-        )
-        ?.classList.add(
+        );
+
+
+    if(activePlayer){
+
+        activePlayer.classList.add(
             "active"
         );
 
+    }
+
 }
 
 
-/* =====================================
-   🏆 終了
-===================================== */
+/* =========================
+   結果表示
+========================= */
 
-function endGame(message){
+function showResult(message){
 
-    gameOver = true;
-
-
-    const resultText =
-        document.getElementById(
-            "resultText"
-        );
-
-
-    resultText.textContent =
-        message;
+    document
+        .getElementById("resultText")
+        .textContent = message;
 
 
     document
-        .getElementById(
-            "resultOverlay"
-        )
-        .style.display =
-            "flex";
+        .getElementById("resultOverlay")
+        .style.display = "flex";
 
 }
 
 
-/* =====================================
-   🔄 リセット
-===================================== */
+/* =========================
+   リセット
+========================= */
 
 function resetGame(){
+
+    /*
+       ★ チョーク線を消す
+    */
+
+    document
+        .querySelectorAll(".win-line")
+        .forEach(
+            line => line.remove()
+        );
+
 
     initGame();
 
 }
 
 
-/* =====================================
-   🚀 スタート
-===================================== */
+/* =========================
+   スタート
+========================= */
 
 initGame();
 
