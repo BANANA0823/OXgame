@@ -1,140 +1,257 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Gravity Four</title>
-<style>
-  body { background:#1f4d35; color:#fff; font-family:sans-serif; text-align:center; padding:10px; margin:0; }
-  .board { display:grid; grid-template-columns:repeat(8,1fr); gap:5px; max-width:400px; margin:15px auto; }
-  .cell { aspect-ratio:1; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.3); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:bold; cursor:pointer; }
-  .players { display:flex; justify-content:center; gap:10px; margin-bottom:15px; }
-  .player { padding:5px 10px; background:rgba(0,0,0,0.3); border-radius:5px; border:2px solid transparent; font-size:12px; }
-  .player.active { border-color:#ffeb3b; background:rgba(255,255,255,0.1); }
-  #login { position:fixed; inset:0; background:#1f4d35; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9; }
-  input, button { padding:10px; font-size:16px; border-radius:5px; border:none; margin:5px; }
-  button { background:#4caf50; color:#fff; font-weight:bold; cursor:pointer; }
-</style>
-</head>
-<body>
-
-<!-- 名前入力 -->
-<div id="login">
-  <h2>🌌 Gravity Four</h2>
-  <p>ゲームでつかう なまえを入力してね</p>
-  <input type="text" id="nameIn" placeholder="なまえ（最大8文字）" maxlength="8">
-  <button onclick="start()">ゲームにさんか</button>
-</div>
-
-<!-- ゲーム画面 -->
-<h1>🌌 Gravity Four</h1>
-<h3 id="status">なまえを入力してね</h3>
-
-<div class="players">
-  <div class="player" id="p0">〇 <span id="n0">P1</span></div>
-  <div class="player" id="p1">× <span id="n1">P2</span></div>
-  <div class="player" id="p2">△ <span id="n2">P3</span></div>
-  <div class="player" id="p3">□ <span id="n3">P4</span></div>
-</div>
-
-<div class="board" id="board"></div>
-<button onclick="reset()">🔄 リセット</button>
-
 <script>
-const ROWS=6, COLS=8;
-const info = [{s:'〇'}, {s:'×'}, {s:'△'}, {s:'□'}];
-let board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
-let cur=0, active=true;
-let roster = {0:"プレイヤー", 1:"CPU-A", 2:"CPU-B", 3:"CPU-C"};
+const ROWS=6,COLS=8;
+// 最初は仮の名前を入れておきます
+const players=[{name:'プレイヤー1',symbol:'〇'},{name:'プレイヤー2',symbol:'×'},{name:'プレイヤー3',symbol:'△'},{name:'プレイヤー4',symbol:'□'}];
+const SUPABASE_URL='https://supabase.co';
+const SUPABASE_KEY='sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const roomId=(new URLSearchParams(location.search).get('room')||'').trim();
+const channelName='4mokoshi-room-'+(roomId||'no-room');
+let clientId=localStorage.getItem('4mokoshi-client-id');if(!clientId){clientId=crypto.randomUUID();localStorage.setItem('4mokoshi-client-id',clientId)}
+let joinedAt=Date.now(),channel=null,myPlayer=-1,roster={},board=empty(),currentPlayer=0,gameOver=false,synced=false;
+let gameStarted=false; // ゲームが開始されたかどうかのフラグ
+let myNickname="";
 
-// 盤面作り
-const bEl = document.getElementById('board');
-for(let r=0; r<ROWS; r++) {
-  for(let c=0; c<COLS; c++) {
-    let e = document.createElement('div');
-    e.className = 'cell';
-    e.onclick = () => clickCol(c);
-    e.id = `c-${r}-${c}`;
-    bEl.appendChild(e);
-  }
+function empty(){return Array.from({length:ROWS},()=>Array(COLS).fill(null))}
+function err(x){document.getElementById('error').textContent=x||''}
+
+// ページを開いたときに名前を入力してもらう
+window.onload = function() {
+    myNickname = prompt("ゲームでつかう なまえ を入力してね", "プレイヤー" + Math.floor(Math.random()*100));
+    if (!myNickname) myNickname = "ゲスト";
+    initGame();
+};
+
+function initGame(){
+    initBoard();
+    if(!roomId){err('URLに ?room=ルーム名 をつけてね');return}
+    channel=sb.channel(channelName,{config:{broadcast:{self:true}}});
+    
+    channel.on('broadcast',{event:'join'},({payload})=>{
+        roster[payload.id]=payload;
+        updateRoster();
+    }).on('broadcast',{event:'leave'},({payload})=>{
+        delete roster[payload.id];
+        updateRoster();
+    }).on('broadcast',{event:'sync'},({payload})=>{
+        board=payload.board;
+        currentPlayer=payload.currentPlayer;
+        gameOver=payload.gameOver;
+        gameStarted=payload.gameStarted;
+        // サーバーから送られてきたプレイヤー名リストを反映
+        for(let i=0; i<4; i++) {
+            if(payload.playerNames[i]) players[i].name = payload.playerNames[i];
+        }
+        render();
+    }).on('broadcast',{event:'req'},()=>{
+        if(myPlayer===0) sendState();
+    });
+
+    channel.subscribe((status)=>{
+        if(status==='SUBSCRIBED'){
+            // 自分の名前と参加時間をみんなに送信
+            channel.send({type:'broadcast',event:'join',payload:{id:clientId,joinedAt,name:myNickname}});
+            setTimeout(()=>{if(!synced)channel.send({type:'broadcast',event:'req',payload:{}})},1000);
+        }
+    });
+    
+    // 定期的に自分の存在をアピールして名前を維持する
+    setInterval(()=>{
+        if(channel) channel.send({type:'broadcast',event:'join',payload:{id:clientId,joinedAt,name:myNickname}});
+    },4000);
 }
 
-function start() {
-  let name = document.getElementById('nameIn').value.trim() || "プレイヤー";
-  document.getElementById('login').style.display = 'none';
-  roster[0] = name;
-  draw();
+function initBoard(){const b=document.getElementById('board');b.innerHTML='';for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let e=document.createElement('div');e.className='cell';e.dataset.row=r;e.dataset.col=c;e.onclick=()=>dropPiece(c);b.appendChild(e)}render()}
+
+function render(){
+    document.querySelectorAll('.cell').forEach(e=>{
+        let r=+e.dataset.row,c=+e.dataset.col;
+        e.textContent='';
+        e.className='cell';
+        if(board[r][c]!==null){
+            e.textContent=players[board[r][c]].symbol;
+            e.classList.add('drop');
+        }
+    });
+    updateTurn();
 }
 
-function draw() {
-  for(let r=0; r<ROWS; r++) {
-    for(let c=0; c<COLS; c++) {
-      let cell = document.getElementById(`c-${r}-${c}`);
-      cell.innerText = board[r][c] !== null ? info[board[r][c]].s : "";
+function updateRoster(){
+    let a=Object.values(roster).sort((x,y)=>x.joinedAt-y.joinedAt||x.id.localeCompare(y.id));
+    myPlayer=a.findIndex(x=>x.id===clientId);
+    if(myPlayer>3)myPlayer=-1;
+    synced=true;
+
+    // ゲームがまだ始まっていない時だけ名前の枠を更新
+    if (!gameStarted) {
+        for(let i=0;i<4;i++){
+            if(i<a.length) {
+                players[i].name = a[i].name; // 参加者のニックネームをセット
+            } else {
+                players[i].name = "（待機中）";
+            }
+        }
     }
-  }
-  for(let i=0; i<4; i++) {
-    document.getElementById('n'+i).innerText = roster[i];
-    document.getElementById('p'+i).className = "player" + (cur===i ? " active" : "");
-  }
-  document.getElementById('status').innerText = active ? `【${roster[cur]}】のばん！` : "ゲーム終了！";
-}
 
-function clickCol(c) {
-  if(!active || cur !== 0) return; // 自分の番（0番）じゃないときは押せない
-  drop(c);
-}
-
-function drop(c) {
-  for(let r=ROWS-1; r>=0; r--) {
-    if(board[r][c] === null) {
-      board[r][c] = cur;
-      draw();
-      
-      if(win(r, c, cur)) { 
-        active=false; 
-        setTimeout(() => { alert(roster[board[r][c]]+"の勝ち！"); draw(); }, 10);
-        return; 
-      }
-      
-      cur = (cur + 1) % 4;
-      draw();
-      
-      if(active && cur !== 0) {
-        setTimeout(cpuMove, 600);
-      }
-      return;
+    for(let i=0;i<4;i++){
+        let e=document.getElementById('player'+i);
+        if(e) {
+            e.innerHTML = `<div class="player-symbol">${players[i].symbol}</div>${players[i].name}`;
+            e.style.opacity=players[i].name !== "（待機中）"?'1':'.45';
+            e.classList.remove('me');
+            if(i===myPlayer) e.classList.add('me');
+        }
     }
-  }
+    
+    document.getElementById('roomStatus').textContent=`ルーム: ${roomId}　参加者: ${Math.min(a.length,4)}/4`;
+    updateTurn();
 }
 
-function cpuMove() {
-  if(!active) return;
-  let ok = [];
-  for(let c=0; c<COLS; c++) { 
-    if(board[0][c] === null) ok.push(c); 
-  }
-  if(ok.length > 0) {
-    let targetCol = ok[Math.floor(Math.random()*ok.length)];
-    drop(targetCol);
-  }
+function updateTurn(){
+    if(!synced)return;
+    const p=players[currentPlayer];
+    const display=document.getElementById("turnDisplay");
+    const myStatus=document.getElementById("myPlayerStatus");
+    
+    display.classList.remove("my-turn");
+    document.querySelectorAll(".player").forEach(e=>e.classList.remove("active"));
+    
+    let targetEl=document.getElementById("player"+currentPlayer);
+    if(targetEl) targetEl.classList.add("active");
+
+    if(myPlayer===-1){
+        myStatus.textContent="あなたは観戦モードです";
+    }else{
+        myStatus.textContent=`あなたは プレイヤー${myPlayer+1}: ${players[myPlayer].name} (${players[myPlayer].symbol}) です`;
+    }
+
+    // ゲーム開始前の表示
+    if (!gameStarted) {
+        if (myPlayer === 0) {
+            display.textContent = "あなたが1Pです。マスをタップしてゲーム開始！";
+            document.getElementById('hint').textContent = "あなたが最初にコマを落とした時点で、足りない枠はCPUになります。";
+        } else {
+            display.textContent = "1Pプレイヤーが開始するのを待っています...";
+            document.getElementById('hint').textContent = "1Pが打つまでお待ちください。";
+        }
+        return;
+    }
+
+    if(gameOver){
+        display.textContent="ゲーム終了！";
+        document.getElementById('hint').textContent="リセットボタンで最初から遊べます。";
+    }else{
+        display.textContent=`${p.name} の番 (${p.symbol})`;
+        if(currentPlayer===myPlayer){
+            display.textContent="あなたの番です！";
+            display.classList.add("my-turn");
+            document.getElementById('hint').textContent="落としたい列のマスをタップしてね";
+        }else{
+            document.getElementById('hint').textContent=`${p.name}が考えています...`;
+        }
+    }
 }
 
-function win(r, c, p) {
-  let d = [[0,1],[1,0],[1,1],[1,-1]];
-  for(let [dr,dc] of d) {
-    let ct = 1;
-    for(let i=1; i<4; i++) { if(board[r+dr*i]?.[c+dc*i]===p) ct++; else break; }
-    for(let i=1; i<4; i++) { if(board[r-dr*i]?.[c-dc*i]===p) ct++; else break; }
-    if(ct>=4) return true;
-  }
-  return false;
+function dropPiece(col){
+    if(gameOver)return;
+    
+    // ゲーム開始前の処理
+    if (!gameStarted) {
+        if (myPlayer === 0) {
+            // 1Pのみ開始可能：足りない枠を「CPU」にする
+            gameStarted = true;
+            for (let i = 0; i < 4; i++) {
+                if (players[i].name === "（待機中）" || !players[i].name) {
+                    players[i].name = "CPU-" + info[i].s; // 仮でinfo[i].s（〇等）を使ってCPU名にする
+                }
+            }
+            // 念のため名前を修正
+            players[1].name = players[1].name === "（待機中）" ? "CPU-×" : players[1].name;
+            players[2].name = players[2].name === "（待機中）" ? "CPU-△" : players[2].name;
+            players[3].name = players[3].name === "（待機中）" ? "CPU-□" : players[3].name;
+        } else {
+            return; // 1P以外は開始できない
+        }
+    }
+
+    if(currentPlayer!==myPlayer)return; // 自分の番じゃなければ打てない
+    if(players[currentPlayer].name.includes("CPU")) return; // CPUの番はクリック不可
+
+    let row=-1;
+    for(let r=ROWS-1;r>=0;r--) if(board[r][col]===null){row=r;break}
+    if(row===-1)return;
+
+    executeMove(row, col);
 }
 
-function reset() {
-  board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
-  cur=0; active=true;
-  draw();
+function executeMove(row, col) {
+    board[row][col]=currentPlayer;
+    render();
+
+    if(checkWin(row,col,currentPlayer)){
+        gameOver=true;
+        document.getElementById('resultText').textContent=`${players[currentPlayer].name} の勝ち！！！`;
+        document.getElementById('resultOverlay').style.display='flex';
+        sendState();
+        return;
+    }
+
+    if(board.every(r=>r.every(c=>c!==null))){
+        gameOver=true;
+        document.getElementById('resultText').textContent="引き分け！";
+        document.getElementById('resultOverlay').style.display='flex';
+        sendState();
+        return;
+    }
+
+    currentPlayer=(currentPlayer+1)%4;
+    sendState();
+
+    // 次がCPUの番なら自動で打たせる（ホストである1Pの端末が計算します）
+    if(!gameOver && players[currentPlayer].name.includes("CPU") && myPlayer === 0){
+        setTimeout(cpuTurn, 700);
+    }
+}
+
+function cpuTurn(){
+    if(gameOver) return;
+    let ok=[];
+    for(let c=0;c<COLS;c++) if(board[c]===null) ok.push(c);
+    if(ok.length>0){
+        let col=ok[Math.floor(Math.random()*ok.length)];
+        let row=-1;
+        for(let r=ROWS-1;r>=0;r--) if(board[r][col]===null){row=r;break}
+        executeMove(row, col);
+    }
+}
+
+function checkWin(r,c,p){
+    let d=[,,,[1,-1]];
+    for(let[dr,dc]of d){
+        let count=1;
+        for(let i=1;i<4;i++)if(board[r+dr*i]?.[c+dc*i]===p)count++;else break;
+        for(let i=1;i<4;i++)if(board[r-dr*i]?.[c-dc*i]===p)count++;else break;
+        if(count>=4)return true;
+    }
+    return false;
+}
+
+function sendState(){
+    if(channel) {
+        // プレイヤー全員の名前も一緒に送信オブジェクトに含める
+        const nameList = players.map(p => p.name);
+        channel.send({type:'broadcast',event:'sync',payload:{board,currentPlayer,gameOver,gameStarted,playerNames:nameList}});
+    }
+}
+
+function resetGame(){
+    board=empty();
+    currentPlayer=0;
+    gameOver=false;
+    gameStarted=false;
+    document.getElementById('resultOverlay').style.display='none';
+    // 部屋の人数に合わせて名前を待機中に戻す
+    updateRoster();
+    sendState();
 }
 </script>
-</body>
-</html>
