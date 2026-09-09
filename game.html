@@ -143,43 +143,20 @@ button{
   font-weight:bold;
 }
 </style>
-</head>
-<body>
+</head><body>
 <div class="game-container">
 <h1>🌌 Gravity Four</h1>
-<div class="description">
-  4人用重力マルバツゲーム
-</div>
-<div id="myPlayerStatus" class="room-status">
-  プレイヤー番号を確認中…
-</div>
-<div id="roomStatus" class="room-status">
-  接続中…
-</div>
-<div class="turn-box">
-  <div id="turnDisplay">接続中…</div>
-</div>
+<div class="description">4人用重力マルバツゲーム</div>
+<div id="myPlayerStatus" class="room-status">プレイヤー番号を確認中…</div>
+<div id="roomStatus" class="room-status">接続中…</div>
+<div class="turn-box"><div id="turnDisplay">接続中…</div></div>
 <div class="players">
-  <div class="player" id="player0">
-    <div class="player-symbol">〇</div>
-    <div class="player-name-text" id="nt0">P1</div>
-  </div>
-  <div class="player" id="player1">
-    <div class="player-symbol">×</div>
-    <div class="player-name-text" id="nt1">P2</div>
-  </div>
-  <div class="player" id="player2">
-    <div class="player-symbol">△</div>
-    <div class="player-name-text" id="nt2">P3</div>
-  </div>
-  <div class="player" id="player3">
-    <div class="player-symbol">□</div>
-    <div class="player-name-text" id="nt3">P4</div>
-  </div>
+  <div class="player" id="player0"><div class="player-symbol">〇</div><div class="player-name-text" id="nt0">P1</div></div>
+  <div class="player" id="player1"><div class="player-symbol">×</div><div class="player-name-text" id="nt1">P2</div></div>
+  <div class="player" id="player2"><div class="player-symbol">△</div><div class="player-name-text" id="nt2">P3</div></div>
+  <div class="player" id="player3"><div class="player-symbol">□</div><div class="player-name-text" id="nt3">P4</div></div>
 </div>
-<div class="board-wrapper">
-  <div id="board" class="board"></div>
-</div>
+<div class="board-wrapper"><div id="board" class="board"></div></div>
 <div id="hint" class="hint">接続中…</div>
 <div id="error" style="color:#ffcccc;"></div>
 <button onclick="resetGame()">🔄 リセット</button>
@@ -202,101 +179,54 @@ const players=[
 ];
 const SUPABASE_URL='https://supabase.co';
 const SUPABASE_KEY='sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q';
-const sb=window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-const roomId=(new URLSearchParams(location.search)
-  .get('room')||'').trim();
-const channelName='4mokoshi-room-'+(roomId||'no-room');
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// 【重要】URLにルーム名がない時は自動的に「1234」をくっつける安全装置
+let urlParams = new URLSearchParams(location.search);
+let roomId = (urlParams.get('room') || '').trim();
+if(!roomId){
+  roomId = "1234";
+  window.history.pushState({}, '', `?room=${roomId}`);
+}
+
+const channelName='4mokoshi-room-'+roomId;
 let clientId=localStorage.getItem('4mokoshi-client-id');
 if(!clientId){
   clientId=crypto.randomUUID();
   localStorage.setItem('4mokoshi-client-id',clientId);
 }
-let joinedAt=Date.now();
-let channel=null;
-let myPlayer=-1;
-let roster={};
-let board=empty();
-let currentPlayer=0;
-let gameOver=false;
-let synced=false;
-let gameStarted=false;
-let myNickname="";
+let joinedAt=Date.now(),channel=null,myPlayer=-1,roster={},board=empty(),currentPlayer=0,gameOver=false,synced=false;
+let gameStarted=false, myNickname="";
 
-function empty(){
-  return Array.from({length:ROWS},()=>
-    Array(COLS).fill(null)
-  );
-}
+function empty(){ return Array.from({length:ROWS},()=>Array(COLS).fill(null)); }
 
 window.onload = function() {
-  myNickname = prompt(
-    "ゲームでつかう なまえ を入力してね",
-    "プレイヤー" + Math.floor(Math.random()*100)
-  );
+  myNickname = prompt("ゲームでつかう なまえ を入力してね", "プレイヤー" + Math.floor(Math.random()*100));
   if (!myNickname) myNickname = "ゲスト";
   initGame();
 };
 
 function initGame(){
   initBoard();
-  if(!roomId){
-    document.getElementById('error')
-      .textContent='URLの末尾に ?room=部屋名 をつけてね';
-    return;
-  }
-  channel=sb.channel(channelName,{
-    config:{broadcast:{self:true}}
-  });
+  channel=sb.channel(channelName,{config:{broadcast:{self:true}}});
   channel.on('broadcast',{event:'join'},({payload})=>{
-    roster[payload.id]=payload;
-    updateRoster();
+    roster[payload.id]=payload; updateRoster();
   }).on('broadcast',{event:'leave'},({payload})=>{
-    delete roster[payload.id];
-    updateRoster();
+    delete roster[payload.id]; updateRoster();
   }).on('broadcast',{event:'sync'},({payload})=>{
-    board=payload.board;
-    currentPlayer=payload.currentPlayer;
-    gameOver=payload.gameOver;
-    gameStarted=payload.gameStarted;
-    for(let i=0; i<4; i++) {
-      if(payload.playerNames[i]) {
-        players[i].name = payload.playerNames[i];
-      }
-    }
+    board=payload.board; currentPlayer=payload.currentPlayer; gameOver=payload.gameOver; gameStarted=payload.gameStarted;
+    for(let i=0; i<4; i++) { if(payload.playerNames[i]) players[i].name = payload.playerNames[i]; }
     render();
   }).on('broadcast',{event:'req'},()=>{
     if(myPlayer===0) sendState();
   });
   channel.subscribe((status)=>{
     if(status==='SUBSCRIBED'){
-      channel.send({
-        type:'broadcast',
-        event:'join',
-        payload:{id:clientId,joinedAt,name:myNickname}
-      });
-      setTimeout(()=>{
-        if(!synced) {
-          channel.send({
-            type:'broadcast',
-            event:'req',
-            payload:{}
-          });
-        }
-      },1000);
+      channel.send({type:'broadcast',event:'join',payload:{id:clientId,joinedAt,name:myNickname}});
+      setTimeout(()=>{ if(!synced) channel.send({type:'broadcast',event:'req',payload:{}}); },1000);
     }
   });
-  setInterval(()=>{
-    if(channel) {
-      channel.send({
-        type:'broadcast',
-        event:'join',
-        payload:{id:clientId,joinedAt,name:myNickname}
-      });
-    }
-  },4000);
+  setInterval(()=>{ if(channel) channel.send({type:'broadcast',event:'join',payload:{id:clientId,joinedAt,name:myNickname}}); },4000);
 }
 
 function initBoard(){
@@ -305,10 +235,7 @@ function initBoard(){
   for(let r=0;r<ROWS;r++) {
     for(let c=0;c<COLS;c++){
       let e=document.createElement('div');
-      e.className='cell';
-      e.id='cell-'+r+'-c'+c;
-      e.onclick=()=>dropPiece(c);
-      b.appendChild(e);
+      e.className='cell'; e.id='cell-'+r+'-c'+c; e.onclick=()=>dropPiece(c); b.appendChild(e);
     }
   }
   render();
@@ -318,44 +245,29 @@ function render(){
   for(let r=0;r<ROWS;r++) {
     for(let c=0;c<COLS;c++){
       let e=document.getElementById('cell-'+r+'-c'+c);
-      if(e) {
-        if(board[r][c]!==null) {
-          e.textContent=players[board[r][c]].symbol;
-        } else {
-          e.textContent='';
-        }
-      }
+      if(e) { e.textContent=board[r][c]!==null ? players[board[r][c]].symbol : ''; }
     }
   }
   updateTurn();
 }
 
 function updateRoster(){
-  let a=Object.values(roster).sort((x,y)=>
-    x.joinedAt-y.joinedAt||x.id.localeCompare(y.id)
-  );
+  let a=Object.values(roster).sort((x,y)=>x.joinedAt-y.joinedAt||x.id.localeCompare(y.id));
   myPlayer=a.findIndex(x=>x.id===clientId);
-  if(myPlayer>3) myPlayer=-1;
-  synced=true;
+  if(myPlayer>3) myPlayer=-1; synced=true;
   if (!gameStarted) {
-    for(let i=0;i<4;i++){
-      players[i].name = i<a.length ?
-        a[i].name : "（待機中）";
-    }
+    for(let i=0;i<4;i++){ players[i].name = i<a.length ? a[i].name : "（待機中）"; }
   }
   for(let i=0;i<4;i++){
     let e=document.getElementById('player'+i);
     let t=document.getElementById('nt'+i);
     if(e && t) {
       t.innerText = players[i].name;
-      e.style.opacity=players[i].name !== "（待機中）" ?
-        "1" : ".45";
-      e.classList.remove('me');
+      e.style.opacity=players[i].name !== "（待機中）" ? "1" : ".45"; e.classList.remove('me');
       if(i===myPlayer) e.classList.add('me');
     }
   }
-  document.getElementById('roomStatus').textContent =
-    "ルーム: " + roomId + "　人数: " + Math.min(a.length,4) + "/4";
+  document.getElementById('roomStatus').textContent = "ルーム: " + roomId + "　人数: " + Math.min(a.length,4) + "/4";
   updateTurn();
 }
 
@@ -364,44 +276,33 @@ function updateTurn(){
   const p=players[currentPlayer];
   const display=document.getElementById("turnDisplay");
   const myStatus=document.getElementById("myPlayerStatus");
-  document.querySelectorAll(".player")
-    .forEach(e=>e.classList.remove("active"));
+  document.querySelectorAll(".player").forEach(e=>e.classList.remove("active"));
   let targetEl=document.getElementById("player"+currentPlayer);
   if(targetEl) targetEl.classList.add("active");
   
-  if(myPlayer===-1){
-    myStatus.textContent="あなたは観戦モードです";
-  }else{
-    myStatus.textContent = "あなたは プレイヤー" +
-      (myPlayer+1) + ": " + players[myPlayer].name +
-      " (" + players[myPlayer].symbol + ") です";
-  }
+  if(myPlayer===-1){ myStatus.textContent="あなたは観戦モードです"; }
+  else{ myStatus.textContent = "あなたは 1P: " + players[myPlayer].name + " です"; }
 
   if (!gameStarted) {
     if (myPlayer === 0) {
       display.textContent = "あなたが1Pです。タップして開始！";
-      document.getElementById('hint').textContent =
-        "足りない枠は自動でCPUになります。";
+      document.getElementById('hint').textContent = "足りない枠は自動でCPUになります。";
     } else {
       display.textContent = "1Pの開始を待っています...";
-      document.getElementById('hint').textContent =
-        "1Pが打つまでお待ちください。";
+      document.getElementById('hint').textContent = "1Pが打つまでお待ちください。";
     }
     return;
   }
   if(gameOver){
     display.textContent="ゲーム終了！";
-    document.getElementById('hint').textContent =
-      "リセットボタンで最初から遊べます。";
+    document.getElementById('hint').textContent = "リセットボタンで最初から遊べます。";
   }else{
     display.textContent=p.name + " の番 (" + p.symbol + ")";
     if(currentPlayer===myPlayer){
       display.textContent="あなたの番です！";
-      document.getElementById('hint').textContent =
-        "落としたい列をタップしてね";
+      document.getElementById('hint').textContent = "落としたい列をタップしてね";
     }else{
-      document.getElementById('hint').textContent =
-        p.name + "が考えています...";
+      document.getElementById('hint').textContent = p.name + "が考えています...";
     }
   }
 }
@@ -412,30 +313,32 @@ function dropPiece(col){
     if (myPlayer === 0) {
       gameStarted = true;
       for(let i=0; i<4; i++) {
-        if(players[i].name==="（待機中）") {
-          players[i].name="CPU-" + players[i].symbol;
-        }
+        if(players[i].name==="（待機中）") { players[i].name="CPU-" + players[i].symbol; }
       }
-    } else {
-      return;
-    }
+    } else { return; }
   }
   if(currentPlayer!==myPlayer)return;
   if(players[currentPlayer].name.includes("CPU")) return;
   let row=-1;
-  for(let r=ROWS-1;r>=0;r--) {
-    if(board[r][col]===null){
-      row=r;
-      break;
-    }
-  }
+  for(let r=ROWS-1;r>=0;r--) { if(board[r][col]===null){ row=r; break; } }
   if(row===-1)return;
   executeMove(row, col);
 }
 
 function executeMove(row, col) {
-  board[row][col]=currentPlayer;
-  render();
+  board[row][col]=currentPlayer; render();
   if(checkWin(row,col,currentPlayer)){
-    gameOver=true;
-document.getElementById('resultText').textContent =players[currentPlayer].name + " の勝ち！！！";document.getElementById('resultOverlay').style.display='flex';sendState();return;}if(board.every(r=>r.every(c=>c!==null))){gameOver=true;document.getElementById('resultText').textContent ="引き分け！";document.getElementById('resultOverlay').style.display='flex';sendState();return;}currentPlayer=(currentPlayer+1)%4;sendState();if(!gameOver &&players[currentPlayer].name.includes("CPU") &&myPlayer === 0){setTimeout(cpuTurn, 700);}}function cpuTurn(){if(gameOver) return;let ok=[];for(let c=0;c<COLS;c++) {if(board[0][c]===null) ok.push(c);}if(ok.length>0){let col=ok[Math.floor(Math.random()*ok.length)];let row=-1;for(let r=ROWS-1;r>=0;r--) {if(board[r][col]===null){row=r;break;}}executeMove(row, col);}}function checkWin(r,c,p){let d=[[0,1],[1,0],[1,1],[1,-1]];for(let[dr,dc]of d){let count=1;for(let i=1; i<4; i++) {if(board[r+dri]?.[c+dci]===p) count++;else break;}for(let i=1; i<4; i++) {if(board[r-dri]?.[c-dci]===p) count++;else break;}if(count>=4) return true;}return false;}function sendState(){if(channel) {const nameList = players.map(p => p.name);channel.send({type:'broadcast',event:'sync',payload:{board,currentPlayer,gameOver,gameStarted,playerNames:nameList}});}}function resetGame(){board=empty();currentPlayer=0;gameOver=false;gameStarted=false;document.getElementById('resultOverlay').style.display='none';updateRoster();sendState();}
+    gameOver=true; document.getElementById('resultText').textContent = players[currentPlayer].name + " の勝ち！！！";
+    document.getElementById('resultOverlay').style.display='flex'; sendState(); return;
+  }
+  if(board.every(r=>r.every(c=>c!==null))){
+    gameOver=true; document.getElementById('resultText').textContent = "引き分け！";
+    document.getElementById('resultOverlay').style.display='flex'; sendState(); return;
+  }
+  currentPlayer=(currentPlayer+1)%4; sendState();
+  if(!gameOver && players[currentPlayer].name.includes("CPU") && myPlayer === 0){ setTimeout(cpuTurn, 700); }
+}
+
+function cpuTurn(){
+  if(gameOver) return;
+  let ok=[];
