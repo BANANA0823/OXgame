@@ -1,4 +1,4 @@
-html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -40,7 +40,6 @@ html<!DOCTYPE html>
 <div class="board" id="board"></div>
 <button onclick="reset()">🔄 リセット</button>
 
-<!-- Supabaseの読み込み -->
 <script src="https://jsdelivr.net"></script>
 <script>
 const ROWS=6, COLS=8;
@@ -49,7 +48,6 @@ let board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
 let cur=0, myP=-1, active=true;
 let roster = {0:"CPU", 1:"CPU", 2:"CPU", 3:"CPU"};
 
-// Supabase接続設定
 const URL = 'https://supabase.co';
 const KEY = 'sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q';
 const sb = window.supabase ? window.supabase.createClient(URL, KEY) : null;
@@ -57,7 +55,6 @@ const room = new URLSearchParams(location.search).get('room') || Math.floor(1000
 window.history.pushState({}, '', `?room=${room}`);
 document.getElementById('room').innerText = "ルームID: " + room;
 
-// 盤面作り
 const bEl = document.getElementById('board');
 for(let r=0; r<ROWS; r++) {
   for(let c=0; c<COLS; c++) {
@@ -69,7 +66,6 @@ for(let r=0; r<ROWS; r++) {
   }
 }
 
-// オンライン通信（リアルタイム）
 const ch = sb ? sb.channel('room-'+room, {config:{broadcast:{self:true}}}) : null;
 if(ch) {
   ch.on('broadcast', {event:'sync'}, (p) => {
@@ -84,20 +80,20 @@ if(ch) {
 
 function send() {
   if(ch) ch.send({type:'broadcast', event:'sync', data:{b:board, c:cur, a:active, r:roster}});
-  else { draw(); if(active && roster[cur]==="CPU") setTimeout(cpuMove, 600); }
+  draw();
+  if(active && roster[cur]==="CPU" && (myP===0 || myP===-1)) setTimeout(cpuMove, 600);
 }
 
 function start() {
   let name = document.getElementById('nameIn').value.trim() || "プレイヤー";
   document.getElementById('login').style.display = 'none';
   
-  if(ch) {
-    for(let i=0; i<4; i++) {
-      if(roster[i]==="CPU" || !roster[i]) { myP=i; roster[i]=name; break; }
-    }
-  } else {
-    myP = 0; roster = name;
-  }
+  myP = 0;
+  roster[0] = name;
+  roster[1] = "CPU";
+  roster[2] = "CPU";
+  roster[3] = "CPU";
+  
   send();
 }
 
@@ -116,7 +112,7 @@ function draw() {
 }
 
 function clickCol(c) {
-  if(!active || (ch && cur!==myP) || roster[cur]==="CPU") return;
+  if(!active || roster[cur]==="CPU") return;
   drop(c);
 }
 
@@ -124,7 +120,7 @@ function drop(c) {
   for(let r=ROWS-1; r>=0; r--) {
     if(board[r][c] === null) {
       board[r][c] = cur;
-      if(win(r, c, cur)) { active=false; alert(roster[cur]+"の勝ち！"); }
+      if(win(r, c, cur)) { active=false; alert((roster[cur]||"CPU")+"の勝ち！"); }
       cur = (cur + 1) % 4;
       send();
       return;
@@ -135,12 +131,12 @@ function drop(c) {
 function cpuMove() {
   if(!active) return;
   let ok = [];
-  for(let c=0; c<COLS; c++) { if(board[c] === null) ok.push(c); }
+  for(let c=0; c<COLS; c++) { if(board[0][c] === null) ok.push(c); }
   if(ok.length > 0) drop(ok[Math.floor(Math.random()*ok.length)]);
 }
 
 function win(r, c, p) {
-  let d = [,,,[1,-1]];
+  let d = [[0,1],[1,0],[1,1],[1,-1]];
   for(let [dr,dc] of d) {
     let ct = 1;
     for(let i=1; i<4; i++) { if(board[r+dr*i]?.[c+dc*i]===p) ct++; else break; }
