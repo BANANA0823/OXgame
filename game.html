@@ -27,7 +27,6 @@
 
 <!-- ゲーム画面 -->
 <h1>🌌 Gravity Four</h1>
-<div id="room">ルームID: 読み込み中</div>
 <h3 id="status">なまえを入力してね</h3>
 
 <div class="players">
@@ -40,21 +39,14 @@
 <div class="board" id="board"></div>
 <button onclick="reset()">🔄 リセット</button>
 
-<script src="https://jsdelivr.net"></script>
 <script>
 const ROWS=6, COLS=8;
 const info = [{s:'〇'}, {s:'×'}, {s:'△'}, {s:'□'}];
 let board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
-let cur=0, myP=-1, active=true;
-let roster = {0:"CPU", 1:"CPU", 2:"CPU", 3:"CPU"};
+let cur=0, active=true;
+let roster = {0:"プレイヤー", 1:"CPU-A", 2:"CPU-B", 3:"CPU-C"};
 
-const URL = 'https://supabase.co';
-const KEY = 'sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q';
-const sb = window.supabase ? window.supabase.createClient(URL, KEY) : null;
-const room = new URLSearchParams(location.search).get('room') || Math.floor(1000+Math.random()*9000).toString();
-window.history.pushState({}, '', `?room=${room}`);
-document.getElementById('room').innerText = "ルームID: " + room;
-
+// 盤面作り
 const bEl = document.getElementById('board');
 for(let r=0; r<ROWS; r++) {
   for(let c=0; c<COLS; c++) {
@@ -66,35 +58,11 @@ for(let r=0; r<ROWS; r++) {
   }
 }
 
-const ch = sb ? sb.channel('room-'+room, {config:{broadcast:{self:true}}}) : null;
-if(ch) {
-  ch.on('broadcast', {event:'sync'}, (p) => {
-    board=p.data.b; cur=p.data.c; active=p.data.a; roster=p.data.r;
-    draw();
-    if(active && roster[cur]==="CPU" && myP===0) setTimeout(cpuMove, 600);
-  }).subscribe((s)=>{
-    if(s==='SUBSCRIBED') ch.send({event:'req'});
-  });
-  ch.on('broadcast', {event:'req'}, () => { if(myP===0) send(); });
-}
-
-function send() {
-  if(ch) ch.send({type:'broadcast', event:'sync', data:{b:board, c:cur, a:active, r:roster}});
-  draw();
-  if(active && roster[cur]==="CPU" && (myP===0 || myP===-1)) setTimeout(cpuMove, 600);
-}
-
 function start() {
   let name = document.getElementById('nameIn').value.trim() || "プレイヤー";
   document.getElementById('login').style.display = 'none';
-  
-  myP = 0;
   roster[0] = name;
-  roster[1] = "CPU";
-  roster[2] = "CPU";
-  roster[3] = "CPU";
-  
-  send();
+  draw();
 }
 
 function draw() {
@@ -105,14 +73,14 @@ function draw() {
     }
   }
   for(let i=0; i<4; i++) {
-    document.getElementById('n'+i).innerText = roster[i] || "CPU";
+    document.getElementById('n'+i).innerText = roster[i];
     document.getElementById('p'+i).className = "player" + (cur===i ? " active" : "");
   }
-  document.getElementById('status').innerText = active ? `【${roster[cur] || 'CPU'}】のばん！` : "ゲーム終了！";
+  document.getElementById('status').innerText = active ? `【${roster[cur]}】のばん！` : "ゲーム終了！";
 }
 
 function clickCol(c) {
-  if(!active || roster[cur]==="CPU") return;
+  if(!active || cur !== 0) return; // 自分の番（0番）じゃないときは押せない
   drop(c);
 }
 
@@ -120,9 +88,20 @@ function drop(c) {
   for(let r=ROWS-1; r>=0; r--) {
     if(board[r][c] === null) {
       board[r][c] = cur;
-      if(win(r, c, cur)) { active=false; alert((roster[cur]||"CPU")+"の勝ち！"); }
+      draw();
+      
+      if(win(r, c, cur)) { 
+        active=false; 
+        setTimeout(() => { alert(roster[board[r][c]]+"の勝ち！"); draw(); }, 10);
+        return; 
+      }
+      
       cur = (cur + 1) % 4;
-      send();
+      draw();
+      
+      if(active && cur !== 0) {
+        setTimeout(cpuMove, 600);
+      }
       return;
     }
   }
@@ -131,8 +110,13 @@ function drop(c) {
 function cpuMove() {
   if(!active) return;
   let ok = [];
-  for(let c=0; c<COLS; c++) { if(board[0][c] === null) ok.push(c); }
-  if(ok.length > 0) drop(ok[Math.floor(Math.random()*ok.length)]);
+  for(let c=0; c<COLS; c++) { 
+    if(board[0][c] === null) ok.push(c); 
+  }
+  if(ok.length > 0) {
+    let targetCol = ok[Math.floor(Math.random()*ok.length)];
+    drop(targetCol);
+  }
 }
 
 function win(r, c, p) {
@@ -149,7 +133,7 @@ function win(r, c, p) {
 function reset() {
   board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
   cur=0; active=true;
-  send();
+  draw();
 }
 </script>
 </body>
