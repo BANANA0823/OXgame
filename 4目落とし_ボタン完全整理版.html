@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>4目落とし - オンライン対戦</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:"Arial Rounded MT Bold","Hiragino Maru Gothic ProN",system-ui,sans-serif;color:#fff;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.04),transparent 25%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.03),transparent 25%),#1f4d35;display:flex;justify-content:center;align-items:center}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.12;background-image:repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(255,255,255,.06) 8px)}
+.game-container{width:100%;max-width:760px;padding:18px}
+h1{margin:0 0 5px;text-align:center;font-size:clamp(30px,8vw,52px);text-shadow:0 0 8px rgba(255,255,255,.2)}
+.description,.room-status{text-align:center;color:rgba(255,255,255,.75)}
+.room-status{font-size:14px;margin:6px 0 10px}
+.turn-box{padding:14px;margin-bottom:12px;border:2px solid rgba(255,255,255,.35);border-radius:12px;text-align:center;background:rgba(0,0,0,.12)}
+.turn-label{font-size:14px;color:rgba(255,255,255,.65)}
+#turnDisplay{margin-top:3px;font-size:clamp(27px,8vw,42px);font-weight:bold;text-shadow:0 0 10px rgba(255,255,255,.35)}
+#turnDisplay.my-turn{text-shadow:0 0 10px #fff,0 0 25px rgba(255,255,255,.8);animation:pulse .8s ease-in-out infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.04)}}
+.players{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:15px}
+.player{padding:7px 4px;border:2px solid rgba(255,255,255,.25);border-radius:10px;text-align:center;background:rgba(0,0,0,.15);transition:.2s;min-width:0}
+.player.active{transform:scale(1.05);border-color:#fff;background:rgba(255,255,255,.12);box-shadow:0 0 8px #fff,0 0 22px rgba(255,255,255,.4)}
+.player.me{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9),0 0 16px rgba(255,255,255,.45)}
+.player-symbol{font-size:27px;font-weight:bold;text-shadow:0 0 6px rgba(255,255,255,.4)}
+#player1 .player-symbol{font-size:32px}
+.player-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;margin-top:1px}
+.player-state{display:block;font-size:11px;min-height:16px;opacity:.78}
+.you-badge{display:block;min-height:16px;font-size:11px;font-weight:bold}
+.player.me .you-badge:before{content:"👈 あなた";text-shadow:0 0 7px rgba(255,255,255,.8)}
+.board-wrapper{position:relative;padding:11px;border:3px solid rgba(255,255,255,.35);border-radius:8px;background:radial-gradient(circle,#25583d,#173d2a);box-shadow:inset 0 0 25px rgba(0,0,0,.4),0 8px 25px rgba(0,0,0,.35)}
+.board{min-width:100%;position:relative;display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.cell{aspect-ratio:1;display:flex;justify-content:center;align-items:center;border:1px solid rgba(255,255,255,.15);border-radius:5px;cursor:pointer;user-select:none;font-size:clamp(24px,7vw,48px);font-weight:bold;text-shadow:0 0 5px rgba(255,255,255,.45);transition:.15s}
+.cell:hover{background:rgba(255,255,255,.07)}
+.cell:active{transform:scale(.94)}
+.drop{animation:drop .35s ease-out}
+@keyframes drop{0%{transform:translateY(-45px);opacity:0}70%{transform:translateY(5px)}100%{transform:translateY(0);opacity:1}}
+.winning-cell{animation:glow .45s ease-in-out infinite alternate}
+@keyframes glow{from{text-shadow:0 0 4px #fff}to{text-shadow:0 0 15px #fff,0 0 25px rgba(255,255,255,.7)}}
+.win-line{position:absolute;height:5px;background:#fff;border-radius:50%;transform-origin:left center;pointer-events:none;z-index:50;box-shadow:0 0 5px #fff,0 0 12px rgba(255,255,255,.7);animation:line .9s ease-out forwards}
+.win-line:after{content:"";position:absolute;left:0;top:2px;width:100%;height:2px;background:rgba(255,255,255,.45)}
+@keyframes line{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
+.hint{text-align:center;margin:13px 0;color:rgba(255,255,255,.75);min-height:22px}
+button{width:100%;height:50px;border:2px solid rgba(255,255,255,.5);border-radius:10px;background:rgba(0,0,0,.2);color:#fff;font-size:17px;font-weight:bold;cursor:pointer;font-family:inherit}
+button:hover{background:rgba(255,255,255,.12)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.secondary{margin-top:8px}
+.error{text-align:center;color:#ffd6d6;font-size:14px;min-height:20px}
+#startButton{margin-bottom:8px}
+#resultOverlay,#nameOverlay{position:fixed;inset:0;display:none;justify-content:center;align-items:center;padding:20px;background:rgba(0,0,0,.72);z-index:1000}
+.result-box,.name-box{width:100%;max-width:430px;padding:30px 25px;text-align:center;border:3px solid rgba(255,255,255,.5);border-radius:15px;background:#1f4d35;box-shadow:0 0 30px rgba(255,255,255,.2)}
+#resultText{margin-bottom:25px;font-size:clamp(34px,10vw,52px);font-weight:bold;text-shadow:0 0 12px rgba(255,255,255,.5)}
+.name-box h2{margin-top:0;font-size:28px}
+.name-box p{color:rgba(255,255,255,.75);font-size:14px}
+.name-input{width:100%;height:52px;border:2px solid rgba(255,255,255,.45);border-radius:10px;background:rgba(0,0,0,.2);color:#fff;font-size:18px;padding:0 14px;text-align:center;font-family:inherit;outline:none}
+.name-input::placeholder{color:rgba(255,255,255,.45)}
+.cpu-note{font-size:11px;opacity:.7}
+@media(max-width:500px){
+    .board-wrapper{overflow-x:auto;}
+.game-container{padding:10px}.board-wrapper{padding:6px}.board{min-width:100%;gap:3px}.players{gap:4px}.player{padding:6px 2px}.player-symbol{font-size:23px}#player1 .player-symbol{font-size:28px}.player-name{font-size:11px}.player-state,.you-badge{font-size:10px}
+}
+
+/* 4〜12人対応 */
+.board-wrapper{overflow-x:auto;}
+.board{min-width:100%;}
+.player.me{border-color:#fff;box-shadow:0 0 10px rgba(255,255,255,.8);}
+.status{font-size:11px;opacity:.75;margin-top:3px;}
+.player-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#startButton:disabled{opacity:.45;cursor:not-allowed;}
+
+
+.online-controls{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin:10px 0 6px;
+}
+.people-control{
+    font-weight:bold;
+}
+.people-control select{
+    font-size:16px;
+    padding:6px 9px;
+    border-radius:8px;
+    margin-left:4px;
+}
+.small-button{
+    width:auto;
+    min-width:120px;
+    height:42px;
+    padding:0 14px;
+}
+.online-info{
+    text-align:center;
+    font-weight:bold;
+    margin:4px 0;
+    font-size:14px;
+}
+#connectionStatus,#roomDisplay{
+    font-weight:normal;
+    opacity:.8;
+    font-size:12px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="game-container">
+<h1>🎮 4目落とし</h1>
+<div class="description">黒板で遊ぶ、4人用オンライン対戦</div>
+<div id="myPlayerStatus" class="room-status">プレイヤー情報を確認中…</div>
+<div id="roomStatus" class="room-status">接続中…</div>
+
+
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:10px 0;flex-wrap:wrap;">
+      <label>人数
+        <select id="playerCount" style="font-size:16px;padding:6px;border-radius:8px;">
+          <option>4</option><option>5</option><option>6</option><option>7</option>
+          <option>8</option><option>9</option><option>10</option><option>11</option><option>12</option>
+        </select>
+      </label>
+    </div>
+
+
+
+<div id="onlineControls" class="online-controls">
+  <label class="people-control">人数
+    
+  </label>
+  <button id="startButton" class="small-button" onclick="startGame()">▶ ゲーム開始</button>
+  <button id="nameButton" class="small-button" onclick="changeName()">✏️ 名前変更</button>
+</div>
+<div id="playerCountDisplay" class="online-info">👥 参加中：0 / 4人</div>
+<div id="myPlayer" class="online-info"></div>
+<div id="connectionStatus" class="online-info">🟡 接続中…</div>
+<div id="roomDisplay" class="online-info"></div>
+
+<div class="turn-box">
+<div class="turn-label">現在のターン</div>
+<div id="turnDisplay">ゲーム開始待ち…</div>
+</div>
+
+<div class="players">
+<div class="player" id="player0"><div class="player-symbol">〇</div><span class="player-name">P1</span><span class="player-state"></span><span class="you-badge"></span></div>
+<div class="player" id="player1"><div class="player-symbol">×</div><span class="player-name">P2</span><span class="player-state"></span><span class="you-badge"></span></div>
+<div class="player" id="player2"><div class="player-symbol">△</div><span class="player-name">P3</span><span class="player-state"></span><span class="you-badge"></span></div>
+<div class="player" id="player3"><div class="player-symbol">□</div><span class="player-name">P4</span><span class="player-state"></span><span class="you-badge"></span></div>
+</div>
+
+<div class="board-wrapper" id="boardWrapper"><div id="board" class="board"></div></div>
+<div id="hint" class="hint">接続しています…</div>
+<div id="error" class="error"></div>
+<button class="secondary" onclick="resetGame()">🔄 ゲームをリセット</button>
+</div>
+
+<div id="resultOverlay">
+<div class="result-box">
+<div id="resultText"></div>
+<button onclick="resetGame()">🔄 もう一回遊ぶ</button>
+</div>
+</div>
+
+<div id="nameOverlay">
+<div class="name-box">
+<h2>プレイヤー名を設定</h2>
+<p>この名前が同じルームの全員に表示されます。</p>
+<input id="nameInput" class="name-input" maxlength="12" placeholder="名前を入力">
+<button class="secondary" onclick="saveName()">この名前で参加</button>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+const ROWS=6, BASE_COLS=8, MAX_PLAYERS=12;
+const symbols=["〇","×","△","□"];
+const colors=["#fff","#fff","#fff","#fff","#ffd166","#ffd166","#ffd166","#ffd166","#7bdff2","#7bdff2","#7bdff2","#7bdff2"];
+
+let players=[], board=[], currentPlayer=0, gameOver=false, started=false;
+let myPlayer=-1, roomId="", socket=null, clientId=crypto.randomUUID();
+let members={}, cpuPlayers=new Set(), pendingCpu=false;
+
+const SUPABASE_URL="https://adjftdxlyvjlaumpejkh.supabase.co";
+const SUPABASE_KEY="sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q";
+
+function colCount(){return BASE_COLS+(players.length-4)*2;}
+
+function setupPlayers(n){
+  players=Array.from({length:n},(_,i)=>({
+    name:"プレイヤー"+(i+1), symbol:symbols[i%4], color:colors[i]
+  }));
+}
+
+function emptyBoard(){board=Array.from({length:ROWS},()=>Array(colCount()).fill(null));}
+
+function initGame(){
+  const n=Math.max(4,Math.min(MAX_PLAYERS,Number(document.getElementById("playerCount")?.value||4)));
+  setupPlayers(n); emptyBoard(); currentPlayer=0; gameOver=false; started=false; cpuPlayers.clear();
+  clearWinLines(); createBoard(); renderBoard(); renderPlayers(); updateTurn(); updateMe();
+  const ov=document.getElementById("resultOverlay"); if(ov)ov.style.display="none";
+}
+
+function createBoard(){
+  const el=document.getElementById("board"); if(!el)return;
+  el.innerHTML="";
+  el.style.gridTemplateColumns=`repeat(${colCount()},minmax(32px,1fr))`;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<colCount();c++){
+    const cell=document.createElement("div");
+    cell.className="cell"; cell.dataset.row=r; cell.dataset.col=c;
+    cell.onclick=()=>dropPiece(c);
+    el.appendChild(cell);
+  }
+}
+
+function renderPlayers(){
+  const el=document.querySelector(".players"); if(!el)return;
+  el.innerHTML="";
+  players.forEach((p,i)=>{
+    const online=!!Object.values(members).find(m=>m.slot===i);
+    const d=document.createElement("div");
+    d.className="player"+(i===myPlayer?" me":"")+(started&&i===currentPlayer?" active":"");
+    d.innerHTML=`<div class="player-symbol" style="color:${p.color}">${p.symbol}</div>
+      <div class="player-name">${esc(p.name)}</div>
+      <div class="status">${cpuPlayers.has(i)?"🤖 CPU":i===myPlayer?"あなた":online?"🟢 オンライン":"⚪ 待機中"}</div>`;
+    el.appendChild(d);
+  });
+  updateCount();
+}
+
+function updateCount(){
+  const el=document.getElementById("playerCountDisplay");
+  if(el)el.textContent=`👥 参加中：${Object.keys(members).length} / ${players.length}人`;
+}
+
+function esc(x){return String(x).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+
+function renderBoard(){
+  document.querySelectorAll(".cell").forEach(cell=>{
+    const r=+cell.dataset.row,c=+cell.dataset.col,v=board[r]?.[c];
+    cell.textContent=""; cell.className="cell";
+    if(v!==null&&v!==undefined&&players[v]){
+      cell.textContent=players[v].symbol; cell.style.color=players[v].color;
+    }else cell.style.color="";
+  });
+}
+
+function updateTurn(){
+  const d=document.getElementById("turnDisplay");
+  if(d)d.textContent=started?`${players[currentPlayer].name}「${players[currentPlayer].symbol}」${cpuPlayers.has(currentPlayer)?" 🤖":""}の番`:"ゲーム開始前";
+  document.querySelectorAll(".player").forEach((e,i)=>e.classList.toggle("active",started&&i===currentPlayer));
+}
+
+function updateMe(){
+  const d=document.getElementById("myPlayer");
+  if(d)d.textContent=myPlayer<0?"参加位置を確認中…":`あなたは ${players[myPlayer].name}「${players[myPlayer].symbol}」`;
+  const b=document.getElementById("startButton");
+  if(b)b.disabled=myPlayer!==0;
+}
+
+function dropRow(c){for(let r=ROWS-1;r>=0;r--)if(board[r][c]===null)return r;return -1;}
+
+function dropPiece(c){
+  if(!started||gameOver||myPlayer!==currentPlayer||cpuPlayers.has(currentPlayer))return;
+  doMove(c,currentPlayer,true);
+}
+
+function doMove(c,p,broadcast=true){
+  if(gameOver)return false;
+  const r=dropRow(c); if(r<0)return false;
+  board[r][c]=p; renderBoard();
+  const line=findWin(r,c,p);
+  if(line){
+    gameOver=true; highlightWinningCells(line); drawWinLine(line);
+    if(broadcast)broadcastState();
+    setTimeout(()=>showResult(players[p].symbol+"の勝ち！"),950);
+    return true;
+  }
+  if(board.every(row=>row.every(v=>v!==null))){
+    gameOver=true; if(broadcast)broadcastState();
+    setTimeout(()=>showResult("引き分け！"),300); return true;
+  }
+  currentPlayer=(currentPlayer+1)%players.length;
+  updateTurn(); if(broadcast)broadcastState();
+  if(cpuPlayers.has(currentPlayer))setTimeout(cpuTurn,350);
+  return true;
+}
+
+function findWin(r,c,p){
+  for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+    const line=getLine(r,c,dr,dc,p);
+    if(line.length>=4){
+      const idx=line.findIndex(x=>x.row===r&&x.col===c);
+      const start=Math.max(0,Math.min(idx-3,line.length-4));
+      return line.slice(start,start+4);
+    }
+  }
+  return null;
+}
+
+function getLine(r,c,dr,dc,p){
+  const a=[];let rr=r-dr,cc=c-dc;
+  while(rr>=0&&rr<ROWS&&cc>=0&&cc<colCount()&&board[rr][cc]===p){a.unshift({row:rr,col:cc});rr-=dr;cc-=dc;}
+  a.push({row:r,col:c});rr=r+dr;cc=c+dc;
+  while(rr>=0&&rr<ROWS&&cc>=0&&cc<colCount()&&board[rr][cc]===p){a.push({row:rr,col:cc});rr+=dr;cc+=dc;}
+  return a;
+}
+
+function winningMoveFor(p){
+  for(let c=0;c<colCount();c++){
+    const r=dropRow(c);if(r<0)continue;
+    board[r][c]=p;
+    const win=!!findWin(r,c,p);
+    board[r][c]=null;
+    if(win)return c;
+  }
+  return -1;
+}
+
+function opponentWinningColumns(p){
+  const set=[];
+  for(let q=0;q<players.length;q++){
+    if(q===p)continue;
+    const c=winningMoveFor(q);
+    if(c>=0)set.push(c);
+  }
+  return [...new Set(set)];
+}
+
+function cpuChooseColumn(p){
+  // 1. Win immediately.
+  let c=winningMoveFor(p); if(c>=0)return c;
+
+  // 2. Block any opponent who can win on the next move.
+  const threats=opponentWinningColumns(p);
+  if(threats.length)return threats[0];
+
+  // 3. Prefer moves that create multiple winning threats.
+  let best=[],bestScore=-Infinity;
+  for(let col=0;col<colCount();col++){
+    const r=dropRow(col);if(r<0)continue;
+    board[r][col]=p;
+    let score=0;
+    if(findWin(r,col,p))score+=100000;
+    for(let c2=0;c2<colCount();c2++){
+      const r2=dropRow(c2);if(r2<0)continue;
+      board[r2][c2]=p;
+      if(findWin(r2,c2,p))score+=500;
+      board[r2][c2]=null;
+    }
+    // Center preference.
+    score-=Math.abs(col-(colCount()-1)/2)*0.5;
+    board[r][col]=null;
+    if(score>bestScore){bestScore=score;best=[col];}
+    else if(score===bestScore)best.push(col);
+  }
+  return best.length?best[Math.floor(Math.random()*best.length)]:-1;
+}
+
+function cpuTurn(){
+  if(!started||gameOver||!cpuPlayers.has(currentPlayer))return;
+  const c=cpuChooseColumn(currentPlayer);
+  if(c>=0)doMove(c,currentPlayer,true);
+}
+
+function highlightWinningCells(line){
+  line.forEach(x=>{
+    const e=document.querySelector(`.cell[data-row="${x.row}"][data-col="${x.col}"]`);
+    if(e)e.classList.add("winning-cell");
+  });
+}
+
+function clearWinLines(){
+  document.querySelectorAll(".win-line").forEach(e=>e.remove());
+  document.querySelectorAll(".winning-cell").forEach(e=>e.classList.remove("winning-cell"));
+}
+
+function drawWinLine(line){
+  const wrap=document.getElementById("boardWrapper");
+  const a=document.querySelector(`.cell[data-row="${line[0].row}"][data-col="${line[0].col}"]`);
+  const b=document.querySelector(`.cell[data-row="${line[3].row}"][data-col="${line[3].col}"]`);
+  if(!a||!b)return;
+  const wr=wrap.getBoundingClientRect(),ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+  const x1=ar.left-wr.left+ar.width/2,y1=ar.top-wr.top+ar.height/2;
+  const x2=br.left-wr.left+br.width/2,y2=br.top-wr.top+br.height/2;
+  const e=document.createElement("div"),dx=x2-x1,dy=y2-y1;
+  e.className="win-line";e.style.width=Math.hypot(dx,dy)+"px";e.style.left=x1+"px";e.style.top=y1+"px";
+  e.style.transform=`rotate(${Math.atan2(dy,dx)*180/Math.PI}deg)`;wrap.appendChild(e);
+}
+
+function showResult(m){document.getElementById("resultText").textContent=m;document.getElementById("resultOverlay").style.display="flex";}
+
+function startGame(){
+  if(myPlayer!==0)return;
+  const n=Math.max(4,Math.min(MAX_PLAYERS,+document.getElementById("playerCount").value||4));
+  setupPlayers(n);emptyBoard();started=true;gameOver=false;currentPlayer=0;
+  cpuPlayers.clear();
+  const onlineSlots=new Set(Object.values(members).map(x=>x.slot));
+  for(let i=0;i<n;i++)if(!onlineSlots.has(i))cpuPlayers.add(i);
+  clearWinLines();createBoard();renderBoard();renderPlayers();updateTurn();updateMe();broadcastState();
+}
+
+function resetGame(){
+  if(myPlayer!==0){alert("リセットはプレイヤー1が押してください");return;}
+  started=false;gameOver=false;currentPlayer=0;emptyBoard();cpuPlayers.clear();
+  clearWinLines();renderBoard();renderPlayers();updateTurn();broadcastState();
+}
+
+function changeName(){
+  const v=prompt("新しいプレイヤー名を入力してください",localStorage.getItem("4mokoshi-player-name")||"");
+  if(v!==null&&v.trim()){
+    localStorage.setItem("4mokoshi-player-name",v.trim().slice(0,12));
+    sendPresence();
+  }
+}
+
+function sendPresence(){
+  ws({type:"presence",room:roomId,id:clientId,name:localStorage.getItem("4mokoshi-player-name")||"名前未設定",joinedAt:Date.now()});
+}
+
+function ws(obj){if(socket&&socket.readyState===1)socket.send(JSON.stringify(obj));}
+
+function broadcastState(){
+  ws({type:"state",room:roomId,started,gameOver,currentPlayer,board,
+      players:players.map(p=>({name:p.name})),cpu:[...cpuPlayers]});
+}
+
+function connect(){
+  roomId=new URLSearchParams(location.search).get("room")||"1234";
+  const rd=document.getElementById("roomDisplay");if(rd)rd.textContent="ルーム："+roomId;
+  const url=SUPABASE_URL.replace("https://","wss://")+"/realtime/v1/websocket?apikey="+encodeURIComponent(SUPABASE_KEY)+"&vsn=1.0.0";
+  socket=new WebSocket(url);
+  socket.onopen=()=>{const e=document.getElementById("connectionStatus");if(e)e.textContent="🟢 オンライン接続済み";sendPresence();};
+  socket.onmessage=e=>{try{handle(JSON.parse(e.data))}catch(_){}};
+  socket.onclose=()=>{const e=document.getElementById("connectionStatus");if(e)e.textContent="🟡 再接続中…";setTimeout(connect,1500);};
+}
+
+function handle(m){
+  if(m.type==="presence"&&m.room===roomId){
+    members[m.id]={...m};
+    const ids=Object.values(members).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+    ids.forEach((x,i)=>x.slot=i);
+    myPlayer=ids.findIndex(x=>x.id===clientId);
+    if(myPlayer>=players.length)myPlayer=players.length-1;
+    ids.forEach((x,i)=>{if(players[i]&&x.name)players[i].name=x.name;});
+    renderPlayers();updateMe();
+  }
+  if(m.type==="state"&&m.room===roomId&&m.id!==clientId){
+    if(Array.isArray(m.players)&&m.players.length>=4&&m.players.length<=MAX_PLAYERS&&m.players.length!==players.length){
+      setupPlayers(m.players.length);document.getElementById("playerCount").value=m.players.length;makeEmptyBoard();createBoard();
+    }
+    m.players?.forEach((p,i)=>{if(players[i]&&p.name)players[i].name=p.name;});
+    board=m.board;started=!!m.started;gameOver=!!m.gameOver;currentPlayer=Number(m.currentPlayer)||0;
+    cpuPlayers=new Set(m.cpu||[]);
+    renderPlayers();renderBoard();updateMe();updateTurn();
+  }
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  const pc=document.getElementById("playerCount");
+  if(pc)pc.addEventListener("change",()=>{
+    if(myPlayer===0&&!started){
+      setupPlayers(+pc.value);emptyBoard();createBoard();renderPlayers();updateMe();renderBoard();
+    }
+  });
+  initGame();connect();
+});
+
+</script>
+</body>
+</html>
