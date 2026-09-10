@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>4目落とし - オンライン対戦</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:"Arial Rounded MT Bold","Hiragino Maru Gothic ProN",system-ui,sans-serif;color:#fff;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.04),transparent 25%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.03),transparent 25%),#1f4d35;display:flex;justify-content:center;align-items:center}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.12;background-image:repeating-linear-gradient(0deg,transparent,transparent 7px,rgba(255,255,255,.06) 8px)}
+.game-container{width:100%;max-width:760px;padding:18px}
+h1{margin:0 0 5px;text-align:center;font-size:clamp(30px,8vw,52px);text-shadow:0 0 8px rgba(255,255,255,.2)}
+.description,.room-status{text-align:center;color:rgba(255,255,255,.75)}
+.room-status{font-size:14px;margin:6px 0 10px}
+.turn-box{padding:14px;margin-bottom:12px;border:2px solid rgba(255,255,255,.35);border-radius:12px;text-align:center;background:rgba(0,0,0,.12)}
+.turn-label{font-size:14px;color:rgba(255,255,255,.65)}
+#turnDisplay{margin-top:3px;font-size:clamp(27px,8vw,42px);font-weight:bold;text-shadow:0 0 10px rgba(255,255,255,.35)}
+#turnDisplay.my-turn{text-shadow:0 0 10px #fff,0 0 25px rgba(255,255,255,.8);animation:pulse .8s ease-in-out infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.04)}}
+.players{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:15px}
+.player{padding:7px 4px;border:2px solid rgba(255,255,255,.25);border-radius:10px;text-align:center;background:rgba(0,0,0,.15);transition:.2s;min-width:0}
+.player.active{transform:scale(1.05);border-color:#fff;background:rgba(255,255,255,.12);box-shadow:0 0 8px #fff,0 0 22px rgba(255,255,255,.4)}
+.player.me{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9),0 0 16px rgba(255,255,255,.45)}
+.player-symbol{font-size:27px;font-weight:bold;text-shadow:0 0 6px rgba(255,255,255,.4)}
+#player1 .player-symbol{font-size:32px}
+.player-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;margin-top:1px}
+.player-state{display:block;font-size:11px;min-height:16px;opacity:.78}
+.you-badge{display:block;min-height:16px;font-size:11px;font-weight:bold}
+.player.me .you-badge:before{content:"👈 あなた";text-shadow:0 0 7px rgba(255,255,255,.8)}
+.board-wrapper{position:relative;padding:11px;border:3px solid rgba(255,255,255,.35);border-radius:8px;background:radial-gradient(circle,#25583d,#173d2a);box-shadow:inset 0 0 25px rgba(0,0,0,.4),0 8px 25px rgba(0,0,0,.35)}
+.board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.cell{aspect-ratio:1;display:flex;justify-content:center;align-items:center;border:1px solid rgba(255,255,255,.15);border-radius:5px;cursor:pointer;user-select:none;font-size:clamp(24px,7vw,48px);font-weight:bold;text-shadow:0 0 5px rgba(255,255,255,.45);transition:.15s}
+.cell:hover{background:rgba(255,255,255,.07)}
+.cell:active{transform:scale(.94)}
+.drop{animation:drop .35s ease-out}
+@keyframes drop{0%{transform:translateY(-45px);opacity:0}70%{transform:translateY(5px)}100%{transform:translateY(0);opacity:1}}
+.winning-cell{animation:glow .45s ease-in-out infinite alternate}
+@keyframes glow{from{text-shadow:0 0 4px #fff}to{text-shadow:0 0 15px #fff,0 0 25px rgba(255,255,255,.7)}}
+.win-line{position:absolute;height:5px;background:#fff;border-radius:50%;transform-origin:left center;pointer-events:none;z-index:50;box-shadow:0 0 5px #fff,0 0 12px rgba(255,255,255,.7);animation:line .9s ease-out forwards}
+.win-line:after{content:"";position:absolute;left:0;top:2px;width:100%;height:2px;background:rgba(255,255,255,.45)}
+@keyframes line{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
+.hint{text-align:center;margin:13px 0;color:rgba(255,255,255,.75);min-height:22px}
+button{width:100%;height:50px;border:2px solid rgba(255,255,255,.5);border-radius:10px;background:rgba(0,0,0,.2);color:#fff;font-size:17px;font-weight:bold;cursor:pointer;font-family:inherit}
+button:hover{background:rgba(255,255,255,.12)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.secondary{margin-top:8px}
+.error{text-align:center;color:#ffd6d6;font-size:14px;min-height:20px}
+#startButton{margin-bottom:8px}
+#resultOverlay,#nameOverlay{position:fixed;inset:0;display:none;justify-content:center;align-items:center;padding:20px;background:rgba(0,0,0,.72);z-index:1000}
+.result-box,.name-box{width:100%;max-width:430px;padding:30px 25px;text-align:center;border:3px solid rgba(255,255,255,.5);border-radius:15px;background:#1f4d35;box-shadow:0 0 30px rgba(255,255,255,.2)}
+#resultText{margin-bottom:25px;font-size:clamp(34px,10vw,52px);font-weight:bold;text-shadow:0 0 12px rgba(255,255,255,.5)}
+.name-box h2{margin-top:0;font-size:28px}
+.name-box p{color:rgba(255,255,255,.75);font-size:14px}
+.name-input{width:100%;height:52px;border:2px solid rgba(255,255,255,.45);border-radius:10px;background:rgba(0,0,0,.2);color:#fff;font-size:18px;padding:0 14px;text-align:center;font-family:inherit;outline:none}
+.name-input::placeholder{color:rgba(255,255,255,.45)}
+.cpu-note{font-size:11px;opacity:.7}
+@media(max-width:500px){
+.game-container{padding:10px}.board-wrapper{padding:6px}.board{gap:3px}.players{gap:4px}.player{padding:6px 2px}.player-symbol{font-size:23px}#player1 .player-symbol{font-size:28px}.player-name{font-size:11px}.player-state,.you-badge{font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="game-container">
+<h1>🎮 4目落とし</h1>
+<div class="description">黒板で遊ぶ、4人用オンライン対戦</div>
+<div id="myPlayerStatus" class="room-status">プレイヤー情報を確認中…</div>
+<div id="roomStatus" class="room-status">接続中…</div>
+
+<div class="turn-box">
+<div class="turn-label">現在のターン</div>
+<div id="turnDisplay">ゲーム開始待ち…</div>
+</div>
+
+<div class="players">
+<div class="player" id="player0"><div class="player-symbol">〇</div><span class="player-name">P1</span><span class="player-state"></span><span class="you-badge"></span></div>
+<div class="player" id="player1"><div class="player-symbol">×</div><span class="player-name">P2</span><span class="player-state"></span><span class="you-badge"></span></div>
+<div class="player" id="player2"><div class="player-symbol">△</div><span class="player-name">P3</span><span class="player-state"></span><span class="you-badge"></span></div>
+<div class="player" id="player3"><div class="player-symbol">□</div><span class="player-name">P4</span><span class="player-state"></span><span class="you-badge"></span></div>
+</div>
+
+<div class="board-wrapper" id="boardWrapper"><div id="board" class="board"></div></div>
+<div id="hint" class="hint">接続しています…</div>
+<div id="error" class="error"></div>
+
+<button id="startButton" onclick="startGame()" disabled>▶️ プレイヤー1がゲーム開始</button>
+<button class="secondary" onclick="changeName()">✏️ 名前を変更</button>
+<button class="secondary" onclick="resetGame()">🔄 ゲームをリセット</button>
+</div>
+
+<div id="resultOverlay">
+<div class="result-box">
+<div id="resultText"></div>
+<button onclick="resetGame()">🔄 もう一回遊ぶ</button>
+</div>
+</div>
+
+<div id="nameOverlay">
+<div class="name-box">
+<h2>プレイヤー名を設定</h2>
+<p>この名前が同じルームの全員に表示されます。</p>
+<input id="nameInput" class="name-input" maxlength="12" placeholder="名前を入力">
+<button class="secondary" onclick="saveName()">この名前で参加</button>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const ROWS=6,COLS=8;
+const players=[
+{name:"プレイヤー1",symbol:"〇"},
+{name:"プレイヤー2",symbol:"×"},
+{name:"プレイヤー3",symbol:"△"},
+{name:"プレイヤー4",symbol:"□"}
+];
+const SUPABASE_URL="https://adjftdxlyvjlaumpejkh.supabase.co";
+const SUPABASE_KEY="sb_publishable_qhq0mWdLBc__w6mBVn4-eA_LfOW7t-q";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const roomId=(new URLSearchParams(location.search).get("room")||"").trim();
+const channelName="4mokoshi-room-"+(roomId||"no-room");
+
+let clientId=localStorage.getItem("4mokoshi-client-id");
+if(!clientId){clientId=crypto.randomUUID();localStorage.setItem("4mokoshi-client-id",clientId)}
+let savedName=localStorage.getItem("4mokoshi-player-name")||"";
+let joinedAt=Date.now(),channel=null,myPlayer=-1;
+let roster={},board=empty(),currentPlayer=0,gameOver=false,started=false,startedBy="";
+let hostId="", synced=false, cpuPlayers=[false,false,false,false], pendingSnapshot=false;
+
+function empty(){return Array.from({length:ROWS},()=>Array(COLS).fill(null))}
+function setError(x){document.getElementById("error").textContent=x||""}
+function initBoard(){
+ const b=document.getElementById("board");b.innerHTML="";
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+  const e=document.createElement("div");e.className="cell";e.dataset.row=r;e.dataset.col=c;e.onclick=()=>dropPiece(c);b.appendChild(e);
+ }
+ render();
+}
+function render(){
+ document.querySelectorAll(".cell").forEach(e=>{
+  const r=+e.dataset.row,c=+e.dataset.col;
+  e.textContent="";e.className="cell";
+  if(board[r][c]!==null){e.textContent=players[board[r][c]].symbol;e.classList.add("drop")}
+ });
+}
+function sortedPlayers(){
+ return Object.values(roster).sort((a,b)=>a.joinedAt-b.joinedAt||a.id.localeCompare(b.id)).slice(0,4);
+}
+function updateRoster(){
+ const list=sortedPlayers();
+ myPlayer=list.findIndex(x=>x.id===clientId);
+ if(myPlayer<0 && started) myPlayer=-1;
+ hostId=list[0]?.id||"";
+ for(let i=0;i<4;i++){
+  const card=document.getElementById("player"+i), entry=list[i];
+  card.style.opacity=entry?"1":".45";
+  card.classList.remove("me");
+  card.querySelector(".player-name").textContent=entry?.name||("P"+(i+1));
+  card.querySelector(".player-state").textContent=entry?(entry.cpu?"🤖 CPU":"👤 参加中"):"空き";
+  if(i===myPlayer)card.classList.add("me");
+ }
+ const humanCount=list.length;
+ document.getElementById("roomStatus").textContent=`ルーム: ${roomId||"未指定"}　参加者: ${humanCount}/4`;
+ if(myPlayer>=0)document.getElementById("myPlayerStatus").textContent=`あなたは プレイヤー${myPlayer+1}「${players[myPlayer].symbol}」`;
+ else document.getElementById("myPlayerStatus").textContent=started?"このゲームには参加していません":"参加者を待っています…";
+
+ const startBtn=document.getElementById("startButton");
+ startBtn.disabled=!(myPlayer===0&&!started);
+ startBtn.textContent=started?"▶️ ゲーム開始済み":"▶️ プレイヤー1がゲーム開始";
+ updateTurn();
+}
+function updateTurn(){
+ const p=players[currentPlayer],display=document.getElementById("turnDisplay");
+ display.classList.remove("my-turn");
+ document.querySelectorAll(".player").forEach(e=>e.classList.remove("active"));
+ const active=document.getElementById("player"+currentPlayer);if(active)active.classList.add("active");
+
+ if(!started){display.textContent="ゲーム開始待ち…";document.getElementById("hint").textContent=myPlayer===0?"4人集まっていなくても、開始すると足りない分をCPUが担当します。":"プレイヤー1のゲーム開始を待っています。";return}
+ if(gameOver){display.textContent=`${p.name}「${p.symbol}」`;document.getElementById("hint").textContent="ゲーム終了";return}
+ const cpu=cpuPlayers[currentPlayer];
+ if(myPlayer===currentPlayer&&!cpu){display.textContent=`🎯 あなたの番！「${p.symbol}」`;display.classList.add("my-turn");document.getElementById("hint").textContent="👆 あなたの番！ 入れたい列をタップ！"}
+ else if(cpu){display.textContent=`🤖 CPU「${p.symbol}」の番`;document.getElementById("hint").textContent="CPUが考えています…"}
+ else{display.textContent=`${p.name}「${p.symbol}」の番`;document.getElementById("hint").textContent=`${p.name}の番です`}
+}
+function showNameDialog(){
+ if(!savedName){document.getElementById("nameOverlay").style.display="flex";setTimeout(()=>document.getElementById("nameInput").focus(),50)}
+}
+function saveName(){
+  const n=document.getElementById("nameInput").value.trim().slice(0,12);
+  if(!n){document.getElementById("nameInput").focus();return}
+  savedName=n;
+  localStorage.setItem("4mokoshi-player-name",n);
+  document.getElementById("nameOverlay").style.display="none";
+  if(channel)trackPresence();
+  if(channel)channel.send({type:"broadcast",event:"name-change",payload:{room:roomId,sender:clientId}});
+}
+
+function changeName(){
+  const input=document.getElementById("nameInput");
+  input.value=savedName||"";
+  document.getElementById("nameOverlay").style.display="flex";
+  setTimeout(()=>{input.focus();input.select()},50);
+}
+function readPresence(){
+ if(!channel)return;
+ const state=channel.presenceState();roster={};
+ Object.keys(state).forEach(k=>{
+  const entries=state[k],v=entries?.[entries.length-1];
+  if(v?.id)roster[v.id]=v;
+ });
+ updateRoster();
+ if(myPlayer===0&&!started&&!synced){synced=true;setTimeout(sendState,100)}
+}
+async function requestSnapshot(){
+ if(!channel)return;
+ await channel.send({type:"broadcast",event:"snapshot",payload:{room:roomId,requester:clientId}});
+}
+async function sendState(){
+ if(!channel)return;
+ await channel.send({type:"broadcast",event:"state",payload:{
+  room:roomId,board:board.map(r=>r.slice()),currentPlayer,gameOver,started,startedBy,
+  cpuPlayers:[...cpuPlayers],sender:clientId
+ }});
+}
+function applyState(d){
+ if(!Array.isArray(d.board)||d.board.length!==ROWS)return;
+ board=d.board.map(r=>r.slice());currentPlayer=d.currentPlayer??0;gameOver=!!d.gameOver;
+ started=!!d.started;startedBy=d.startedBy||"";cpuPlayers=Array.isArray(d.cpuPlayers)?d.cpuPlayers:[false,false,false,false];
+ synced=true;render();updateRoster();
+ if(gameOver){
+  const line=findAnyWin();
+  if(line){highlight(line);draw(line);setTimeout(()=>show(players[currentPlayer].symbol+"の勝ち！"),950)}
+  else show("引き分け！");
+ }else if(started)maybeRunCpu();
+}
+async function startGame(){
+ if(myPlayer!==0||started)return;
+ setError("");
+ const list=sortedPlayers();
+ cpuPlayers=[false,false,false,false];
+ for(let i=list.length;i<4;i++)cpuPlayers[i]=true;
+ started=true;startedBy=clientId;currentPlayer=0;gameOver=false;board=empty();
+ document.getElementById("resultOverlay").style.display="none";
+ document.querySelectorAll(".win-line").forEach(e=>e.remove());
+ initBoard();updateTurn();await sendState();maybeRunCpu();
+}
+function dropPiece(col){
+ if(!started||gameOver||myPlayer<0)return;
+ if(cpuPlayers[currentPlayer]){setError("今はCPUの番です。");return}
+ if(myPlayer!==currentPlayer){setError("今はあなたの番ではありません。");return}
+ makeMove(col,currentPlayer,true);
+}
+async function makeMove(col,player,fromHuman){
+ if(gameOver||!started)return;
+ let row=-1;
+ for(let r=ROWS-1;r>=0;r--)if(board[r][col]===null){row=r;break}
+ if(row<0)return;
+ board[row][col]=player;render();
+ const line=findWin(row,col,player);
+ if(line){
+  gameOver=true;highlight(line);draw(line);await sendState();
+  setTimeout(()=>show(players[player].symbol+"の勝ち！"),950);return;
+ }
+ if(full()){
+  gameOver=true;await sendState();setTimeout(()=>show("引き分け！"),300);return;
+ }
+ currentPlayer=(currentPlayer+1)%4;updateTurn();await sendState();
+ if(started&&!gameOver)maybeRunCpu();
+}
+function maybeRunCpu(){
+ if(!started||gameOver||!cpuPlayers[currentPlayer])return;
+ if(myPlayer!==0)return;
+ const player=currentPlayer;
+ setTimeout(async()=>{
+  if(gameOver||!started||currentPlayer!==player||!cpuPlayers[player])return;
+  const choices=[];
+  for(let c=0;c<COLS;c++)if(board[0][c]===null)choices.push(c);
+  if(!choices.length)return;
+
+  // 自分が勝てるなら最優先
+  for(const c of choices){
+   if(wouldWin(c,player)){await makeMove(c,player,false);return}
+  }
+
+  // 相手が次の一手で4つ揃う列を最優先でブロック
+  const danger=[];
+  for(const c of choices){
+   for(let opponent=0;opponent<4;opponent++){
+    if(opponent!==player && wouldWin(c,opponent)){
+     danger.push(c);
+     break;
+    }
+   }
+  }
+
+  if(danger.length){
+   await makeMove(danger[0],player,false);
+   return;
+  }
+
+  // 危険がなければ、自分の連続を伸ばす
+  let best=choices[0],bestScore=-Infinity;
+  for(const c of choices){
+   const score=cpuColumnScore(player,c);
+   if(score>bestScore){bestScore=score;best=c}
+  }
+  await makeMove(best,player,false);
+ },650);
+}
+
+function wouldWin(col,player){
+ const row=getDropRow(col);
+ if(row<0)return false;
+ board[row][col]=player;
+ const win=
+   getLineLength(row,col,0,1,player)>=4 ||
+   getLineLength(row,col,1,0,player)>=4 ||
+   getLineLength(row,col,1,1,player)>=4 ||
+   getLineLength(row,col,1,-1,player)>=4;
+ board[row][col]=null;
+ return win;
+}
+
+function getLineLength(row,col,dr,dc,player){
+ let count=1;
+ let r=row+dr,c=col+dc;
+ while(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player){
+  count++;r+=dr;c+=dc;
+ }
+ r=row-dr;c=col-dc;
+ while(r>=0&&r<ROWS&&c>=0&&c<COLS&&board[r][c]===player){
+  count++;r-=dr;c-=dc;
+ }
+ return count;
+}
+
+function cpuColumnScore(player,c){
+ const r=getDropRow(c);
+ if(r<0)return -Infinity;
+ board[r][c]=player;
+ let score=0;
+ for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+  const n=both(r,c,dr,dc,player).length;
+  score+=n*n*20;
+  if(n===3)score+=180;
+ }
+ score+=(3.5-Math.abs(c-3.5))*5;
+ board[r][c]=null;
+ return score;
+}
+
+function getDropRow(c){for(let r=ROWS-1;r>=0;r--)if(board[r][c]===null)return r;return -1}
+function findWin(r,c,p){
+ for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+  const l=both(r,c,dr,dc,p);if(l.length>=4)return choose(l,r,c);
+ }
+ return null;
+}
+function findAnyWin(){
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(board[r][c]!==null){const x=findWin(r,c,board[r][c]);if(x)return x}
+ return null;
+}
+function both(r,c,dr,dc,p){
+ let l=[],a=r-dr,b=c-dc;
+ while(a>=0&&a<ROWS&&b>=0&&b<COLS&&board[a][b]===p){l.unshift({row:a,col:b});a-=dr;b-=dc}
+ l.push({row:r,col:c});a=r+dr;b=c+dc;
+ while(a>=0&&a<ROWS&&b>=0&&b<COLS&&board[a][b]===p){l.push({row:a,col:b});a+=dr;b+=dc}
+ return l;
+}
+function choose(l,r,c){
+ if(l.length===4)return l;
+ const i=l.findIndex(x=>x.row===r&&x.col===c),s=Math.max(0,Math.min(i-3,l.length-4));
+ return l.slice(s,s+4);
+}
+function highlight(l){l.forEach(p=>{const e=document.querySelector(`.cell[data-row="${p.row}"][data-col="${p.col}"]`);if(e)e.classList.add("winning-cell")})}
+function draw(l){
+ document.querySelectorAll(".win-line").forEach(e=>e.remove());
+ const w=document.getElementById("boardWrapper"),a=document.querySelector(`.cell[data-row="${l[0].row}"][data-col="${l[0].col}"]`),b=document.querySelector(`.cell[data-row="${l[3].row}"][data-col="${l[3].col}"]`);
+ if(!a||!b)return;
+ const wr=w.getBoundingClientRect(),x=a.getBoundingClientRect(),y=b.getBoundingClientRect();
+ const x1=x.left-wr.left+x.width/2,y1=x.top-wr.top+x.height/2,x2=y.left-wr.left+y.width/2,y2=y.top-wr.top+y.height/2;
+ const e=document.createElement("div"),len=Math.hypot(x2-x1,y2-y1),ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+ e.className="win-line";e.style.width=len+"px";e.style.left=x1+"px";e.style.top=y1+"px";e.style.transform=`rotate(${ang}deg)`;w.appendChild(e);
+}
+function full(){return board[0].every(x=>x!==null)}
+function show(m){document.getElementById("resultText").textContent=m;document.getElementById("resultOverlay").style.display="flex"}
+function applyReset(){
+ board=empty();currentPlayer=0;gameOver=false;started=false;startedBy="";cpuPlayers=[false,false,false,false];synced=true;
+ document.querySelectorAll(".win-line").forEach(e=>e.remove());
+ document.getElementById("resultOverlay").style.display="none";initBoard();updateTurn();updateRoster();setError("");
+}
+async function resetGame(){
+ if(myPlayer!==0){setError("ゲームのリセットはプレイヤー1が行えます。");return}
+ applyReset();
+ if(channel)await channel.send({type:"broadcast",event:"reset",payload:{room:roomId,sender:clientId}});
+ await sendState();
+}
+window.addEventListener("resize",()=>{const l=findAnyWin();if(l)draw(l)});
+document.getElementById("nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")saveName()});
+start();
+</script>
+</body>
+</html>
